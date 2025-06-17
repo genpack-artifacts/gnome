@@ -109,8 +109,7 @@
     },
     "mask" : [
         ">=dev-lang/python-3.14",
-        "<dev-lang/python-3.13",
-        "<llvm-core/llvm-20"
+        //"<dev-lang/python-3.13"
     ],
     "license": {
         "sys-kernel/linux-firmware": "linux-fw-redistributable",
