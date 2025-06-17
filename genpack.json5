@@ -46,7 +46,8 @@
         "media-video/ffmpeg-compat"
     ],
     "buildtime-packages": [
-        "dev-lang/tcl",
+        "dev-lang/tcl", // for srs
+        "app-arch/deb2targz" // for obs plugins
     ],
     "circulardep-breaker": {
         "packages": ["dev-python/pillow", "media-libs/freetype"],
