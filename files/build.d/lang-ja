@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+echo -e 'LANG=ja_JP.utf8\nLC_MESSAGES=ja_JP.utf8\nLC_TIME=ja_JP.utf8' > /etc/env.d/02locale
+env-update

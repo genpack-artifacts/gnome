@@ -1,0 +1,123 @@
+{
+    "name": "gnome",
+    "gentoo-profile": "desktop/gnome/systemd",
+    "minimum-lower-layer-capacity": 14,
+    "compression": "xz",
+    "packages": [
+        "genpack/systemimg",
+        "gnome-base/gnome",
+        "net-wireless/iw",
+        "app-i18n/mozc",
+        "media-fonts/noto",
+        "media-fonts/noto-emoji",
+        "media-sound/pavucontrol",
+        "www-client/google-chrome",
+        "x11-apps/mesa-progs",
+        "media-video/libva-utils",
+        "dev-util/vulkan-tools",
+        "net-libs/libnsl", // for libnsl.so.3
+        "media-video/vlc",
+        "net-im/discord",
+        "app-emulation/virt-viewer",
+        "dev-util/glib-utils", // virt-viewer needs /usr/bin/glib-mkenums
+        "app-admin/sudo",
+        "app-misc/evtest",
+        "net-misc/gnome-remote-desktop",
+        "net-misc/remmina",
+        "net-analyzer/zabbix",
+        "app-containers/snapd",
+        "media-video/obs-studio",
+        "app-misc/radeontop",
+        "sys-fs/bcachefs-tools",
+        "net-misc/iperf",
+        "app-misc/screen",
+        "media-gfx/gimp",
+        "dev-vcs/git",
+        "app-mobilephone/scrcpy",
+        "dev-libs/rocm-opencl-runtime",
+        "dev-util/clinfo",
+        "app-misc/jdupes",
+        "sys-auth/rtkit",
+        "dev-python/pyqt6-webengine",
+        "www-servers/apache",
+        // srs
+        "net-libs/libsrtp",
+        "net-libs/srt",
+        "media-video/ffmpeg-compat"
+    ],
+    "buildtime-packages": [
+        "dev-lang/tcl",
+    ],
+    "circulardep-breaker": {
+        "packages": ["dev-python/pillow", "media-libs/freetype"],
+        "use": "-truetype -harfbuzz"
+    },
+    "accept_keywords": {
+        "app-i18n/mozc": null,
+        "app-mobilephone/scrcpy": null,
+        "dev-util/clinfo": null,
+        "dev-util/glslang": null, // for glslang-1.4.313.0
+        // obs-studio
+        "media-video/obs-studio": null,
+        "net-libs/mbedtls": null,
+        "dev-libs/qr-code-generator": null,
+        // ROCm
+        "dev-libs/rocm-opencl-runtime": null,
+        "dev-libs/rocr-runtime": null,
+        "dev-libs/rocm-comgr": null,
+        "dev-libs/rocm-device-libs": null,
+        "dev-build/rocm-cmake": null,
+        "dev-util/hipcc": null,
+        "dev-libs/roct-thunk-interface": null
+    },
+    "use": {
+        "genpack/systemimg": "baremetal",
+        "sys-apps/systemd": "policykit",
+        "app-i18n/mozc": "ibus renderer",
+        "sys-libs/zlib": "minizip",
+        "sys-boot/grub": "GRUB_PLATFORMS: efi-32",
+        "media-fonts/noto": "cjk",
+        "media-libs/mesa": "vulkan vaapi VIDEO_CARDS: virgl zink",
+        "x11-apps/mesa-progs": "X gles2 vulkan",
+        "media-video/pipewire": "gsettings echo-cancel ffmpeg extra sound-server",
+        "media-video/ffmpeg": "amf v4l x264 x265 opus srt vaapi opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+        "media-video/ffmpeg-compat": "amf v4l x265 opus srt vaapi opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+        "media-video/vlc": "x265 pulseaudio opus v4l",
+        "media-video/obs-studio": "browser pipewire python v4l vlc websocket",
+        "gnome-base/gnome-shell": "pipewire",
+        "app-emulation/virt-viewer": "-libvirt",
+        "x11-base/xorg-server": "xvfb",
+        "net-misc/freerdp": "server",
+        "x11-wm/mutter": "screencast",
+        "media-libs/freetype" : "harfbuzz",
+        "media-libs/libsdl2": "X", // for scrcpy
+        "dev-libs/libdbusmenu": "gtk3",
+        "net-analyzer/zabbix": "-postgres",
+        "sys-fs/squashfs-tools": "lzma lzo",
+        "media-libs/opencv": "python opencl CPU_FLAGS_X86: avx avx2 f16c fma3 popcnt sse3 sse4_1 sse4_2 ssse3",
+        "www-servers/apache": "APACHE2_MODULES: proxy proxy_http",
+        "dev-libs/weston": "-X -desktop headless kiosk",
+        "dev-python/pyqt6": "multimedia positioning websockets webchannel",
+        "net-misc/remmina": "rdp vnc spice wayland",
+        "media-libs/libcanberra": "alsa", // for mutter
+        // gimp
+        "media-libs/gegl": "cairo ffmpeg sdl2 v4l webp",
+        "app-text/poppler": "cairo cjk",
+        // qtwebengine
+        "dev-qt/qtwebengine": "screencast vaapi webdriver",
+        "dev-libs/libxml2": "icu",
+    },
+    "mask" : [
+        ">=dev-lang/python-3.14",
+        "<dev-lang/python-3.13",
+        "<llvm-core/llvm-20"
+    ],
+    "license": {
+        "sys-kernel/linux-firmware": "linux-fw-redistributable",
+        "www-client/google-chrome": "google-chrome",
+        "net-im/discord": "all-rights-reserved",
+        "media-video/amdgpu-pro-amf": "AMD-GPU-PRO-EULA", // for ffmpeg[amf]
+    },
+    "services":["gdm","NetworkManager","bluetooth","snapd"]
+}
+// vm run --display=gtk gnome-$(uname -m).squashfs
