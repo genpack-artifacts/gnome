@@ -50,11 +50,12 @@
         "app-arch/deb2targz" // for obs plugins
     ],
     "circulardep-breaker": {
-        "packages": ["dev-python/pillow", "media-libs/freetype"],
-        "use": "-truetype -harfbuzz"
+        "packages": ["dev-python/pillow", "media-libs/freetype","media-libs/harfbuzz"],
+        "use": "-truetype -harfbuzz -cairo"
     },
     "accept_keywords": {
         "app-i18n/mozc": null,
+	"dev-cpp/abseil-cpp": null, // for abseil-cpp-20250512.0 mozc needs
         "app-mobilephone/scrcpy": null,
         "dev-util/clinfo": null,
         "dev-util/glslang": null, // for glslang-1.4.313.0
