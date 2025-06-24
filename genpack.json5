@@ -54,6 +54,9 @@
         "use": "-truetype -harfbuzz -cairo"
     },
     "accept_keywords": {
+        "sys-kernel/gentoo-kernel-bin": null, // Linux 6.12(LTS) does not work with RTL8852CE properly
+        "virtual/dist-kernel": null, // for gentoo-kernel-bin
+        "sys-kernel/linux-firmware": null, // latest firmware helps working with newer hardware
         "app-i18n/mozc": null,
 	"dev-cpp/abseil-cpp": null, // for abseil-cpp-20250512.0 mozc needs
         "app-mobilephone/scrcpy": null,
