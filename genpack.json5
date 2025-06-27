@@ -124,6 +124,21 @@
         "net-im/discord": "all-rights-reserved",
         "media-video/amdgpu-pro-amf": "AMD-GPU-PRO-EULA", // for ffmpeg[amf]
     },
+    "users": [
+        {
+            "name": "user",
+            "uid": 1000,
+            "empty-password": true,
+            "additional-groups": [
+                "wheel",
+                "audio",
+                "video",
+                "input",
+                "usb",
+                "gnome-remote-desktop"
+            ]
+        }
+    ],
     "services":["gdm","NetworkManager","bluetooth","snapd"]
 }
 // vm run --display=gtk gnome-$(uname -m).squashfs
