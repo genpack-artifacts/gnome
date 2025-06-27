@@ -111,6 +111,8 @@
         // qtwebengine
         "dev-qt/qtwebengine": "screencast vaapi webdriver",
         "dev-libs/libxml2": "icu",
+	// gnome
+	"media-libs/libmediaart": "gtk -qt6"
     },
     "mask" : [
         ">=dev-lang/python-3.14",
