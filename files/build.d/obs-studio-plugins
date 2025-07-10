@@ -3,8 +3,8 @@ set -e
 
 arch=$(uname -m)
 if [ "$arch" != "x86_64" ]; then
-  printf 'Error: unsupported architecture (%s). This script supports x86_64 only.\n' "$arch" >&2
-  exit 1
+  printf 'Error: unsupported architecture (%s). This script supports x86_64 only. skipping.\n' "$arch" >&2
+  exit 0
 fi
 
 PACKAGE_URL=`get-github-download-url sorayuki obs-multi-rtmp 'obs-multi-rtmp-.*x86_64-linux-gnu\.deb$'`

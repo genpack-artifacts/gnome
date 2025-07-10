@@ -10,41 +10,25 @@
         "media-fonts/noto",
         "media-fonts/noto-emoji",
         "media-sound/pavucontrol",
-        "www-client/google-chrome",
         "x11-apps/mesa-progs",
         "media-video/libva-utils",
-        "dev-util/vulkan-tools",
         "net-libs/libnsl", // for libnsl.so.3
         "media-video/vlc",
-        "net-im/discord",
         "app-emulation/virt-viewer",
         "dev-util/glib-utils", // virt-viewer needs /usr/bin/glib-mkenums
         "app-admin/sudo",
         "app-misc/evtest",
-        "net-misc/gnome-remote-desktop",
         "net-misc/remmina",
-        "net-analyzer/zabbix",
-        "app-containers/snapd",
-        "media-video/obs-studio",
-        "app-misc/radeontop",
-        "sys-fs/bcachefs-tools",
         "net-misc/iperf",
         "app-misc/screen",
         "media-gfx/gimp",
         "dev-vcs/git",
-        "app-mobilephone/scrcpy",
-        "dev-libs/rocm-opencl-runtime",
-        "dev-util/clinfo",
-        "app-misc/jdupes",
         "sys-auth/rtkit",
-        "dev-python/pyqt6-webengine",
         "www-servers/apache",
         // srs
         "net-libs/libsrtp",
         "net-libs/srt",
         "media-video/ffmpeg-compat",
-        // for obs-studio(https://bugs.gentoo.org/959751)
-        "kde-frameworks/extra-cmake-modules"
     ],
     buildtime_packages: [
         "dev-lang/tcl", // for srs
@@ -79,10 +63,10 @@
     },
     use: {
         "genpack/systemimg": "baremetal",
+        "sys-boot/grub": "GRUB_PLATFORMS: pc efi-32",
         "sys-apps/systemd": "policykit",
         "app-i18n/mozc": "ibus renderer",
         "sys-libs/zlib": "minizip",
-        "sys-boot/grub": "GRUB_PLATFORMS: efi-32",
         "media-fonts/noto": "cjk",
         "media-libs/mesa": "vulkan vaapi VIDEO_CARDS: virgl zink",
         "x11-apps/mesa-progs": "X gles2 vulkan",
@@ -137,10 +121,41 @@
                 "video",
                 "input",
                 "usb",
-                "gnome-remote-desktop"
             ]
         }
     ],
-    services:["gdm","NetworkManager","bluetooth","snapd"]
+    services:["gdm","NetworkManager","bluetooth"],
+    arch: {
+        "x86_64": {
+            packages: [
+                "app-containers/snapd",
+                "app-misc/jdupes",
+                "app-misc/radeontop",
+                "dev-libs/rocm-opencl-runtime",
+                "dev-util/clinfo",
+                "dev-python/pyqt6-webengine",
+                "dev-util/vulkan-tools",
+                "net-analyzer/zabbix",
+                "net-im/discord",
+                "net-misc/gnome-remote-desktop",
+                "sys-fs/bcachefs-tools",
+                "www-client/google-chrome",
+                "app-mobilephone/scrcpy",
+                "media-video/obs-studio",
+                // for obs-studio(https://bugs.gentoo.org/959751)
+                "kde-frameworks/extra-cmake-modules"
+            ],
+            "services": ["snapd"]
+        },
+        "i686": {
+            accept_keywords: {
+                "app-misc/localsearch": null,
+            },
+            use: {
+                "dev-lang/rust-bin": "CPU_FLAGS_X86: sse2",
+                //"app-misc/tinysparql": "-localsearch"
+            }
+        },
+    }
 }
 // vm run --display=gtk gnome-$(uname -m).squashfs

@@ -5,8 +5,8 @@ ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
     ARCH_STR="x64"
 else
-    echo "Unsupported architecture: $ARCH"
-    exit 1
+    echo "Unsupported architecture: $ARCH. Skipping xmrig installation."
+    exit 0
 fi
 
 echo 'Downloading xmrig...'
