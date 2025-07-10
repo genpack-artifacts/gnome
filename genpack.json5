@@ -1,9 +1,8 @@
 {
-    "name": "gnome",
-    "gentoo-profile": "desktop/gnome/systemd",
-    "minimum-lower-layer-capacity": 14,
-    "compression": "xz",
-    "packages": [
+    name: "gnome",
+    gentoo_profile: "desktop/gnome/systemd",
+    compression: "xz",
+    packages: [
         "genpack/systemimg",
         "gnome-base/gnome",
         "net-wireless/iw",
@@ -43,22 +42,25 @@
         // srs
         "net-libs/libsrtp",
         "net-libs/srt",
-        "media-video/ffmpeg-compat"
+        "media-video/ffmpeg-compat",
+        // for obs-studio(https://bugs.gentoo.org/959751)
+        "kde-frameworks/extra-cmake-modules"
     ],
-    "buildtime-packages": [
+    buildtime_packages: [
         "dev-lang/tcl", // for srs
-        "app-arch/deb2targz" // for obs plugins
+        "dev-build/cmake", // for srs
+        "app-arch/deb2targz", // for obs plugins
     ],
-    "circulardep-breaker": {
+    circulardep_breaker: {
         "packages": ["dev-python/pillow", "media-libs/freetype","media-libs/harfbuzz","dev-libs/glib"],
         "use": "-truetype -harfbuzz -cairo -sysprof"
     },
-    "accept_keywords": {
+    accept_keywords: {
         "sys-kernel/gentoo-kernel-bin": null, // Linux 6.12(LTS) does not work with RTL8852CE properly
         "virtual/dist-kernel": null, // for gentoo-kernel-bin
         "sys-kernel/linux-firmware": null, // latest firmware helps working with newer hardware
         "app-i18n/mozc": null,
-	"dev-cpp/abseil-cpp": null, // for abseil-cpp-20250512.0 mozc needs
+        "dev-cpp/abseil-cpp": null, // for abseil-cpp-20250512.0 mozc needs
         "app-mobilephone/scrcpy": null,
         "dev-util/clinfo": null,
         "dev-util/glslang": null, // for glslang-1.4.313.0
@@ -75,7 +77,7 @@
         "dev-util/hipcc": null,
         "dev-libs/roct-thunk-interface": null
     },
-    "use": {
+    use: {
         "genpack/systemimg": "baremetal",
         "sys-apps/systemd": "policykit",
         "app-i18n/mozc": "ibus renderer",
@@ -111,23 +113,23 @@
         // qtwebengine
         "dev-qt/qtwebengine": "screencast vaapi webdriver",
         "dev-libs/libxml2": "icu",
-	// gnome
-	"media-libs/libmediaart": "gtk -qt6"
+        // gnome
+        "media-libs/libmediaart": "gtk -qt6"
     },
-    "mask" : [
+    mask : [
         ">=dev-lang/python-3.14",
         //"<dev-lang/python-3.13"
     ],
-    "license": {
+    license: {
         "sys-kernel/linux-firmware": "linux-fw-redistributable",
         "www-client/google-chrome": "google-chrome",
         "net-im/discord": "all-rights-reserved",
         "media-video/amdgpu-pro-amf": "AMD-GPU-PRO-EULA", // for ffmpeg[amf]
     },
-    "users": [
+    users: [
         {
-            "name": "user",
-            "uid": 1000,
+            name: "user",
+            uid: 1000,
             "empty-password": true,
             "additional-groups": [
                 "wheel",
@@ -139,6 +141,6 @@
             ]
         }
     ],
-    "services":["gdm","NetworkManager","bluetooth","snapd"]
+    services:["gdm","NetworkManager","bluetooth","snapd"]
 }
 // vm run --display=gtk gnome-$(uname -m).squashfs
