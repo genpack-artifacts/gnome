@@ -71,10 +71,10 @@
         "media-libs/mesa": "vulkan vaapi VIDEO_CARDS: virgl zink",
         "x11-apps/mesa-progs": "X gles2 vulkan",
         "media-video/pipewire": "gsettings echo-cancel ffmpeg extra sound-server",
-        "media-video/ffmpeg": "amf v4l x264 x265 opus srt vaapi opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
-        "media-video/ffmpeg-compat": "amf v4l x265 opus srt vaapi opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+        "media-video/ffmpeg": "v4l x264 x265 opus srt opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+        "media-video/ffmpeg-compat": "v4l x265 opus srt opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
         "media-video/vlc": "x265 pulseaudio opus v4l",
-        "media-video/obs-studio": "browser pipewire python v4l vlc websocket",
+        "media-video/obs-studio": "browser pipewire python v4l vlc websocket nvenc",
         "gnome-base/gnome-shell": "pipewire",
         "app-emulation/virt-viewer": "-libvirt",
         "x11-base/xorg-server": "xvfb",
@@ -109,6 +109,7 @@
         "www-client/google-chrome": "google-chrome",
         "net-im/discord": "all-rights-reserved",
         "media-video/amdgpu-pro-amf": "AMD-GPU-PRO-EULA", // for ffmpeg[amf]
+        "x11-drivers/nvidia-drivers": "NVIDIA-2025"
     },
     users: [
         {
@@ -138,6 +139,7 @@
                 "net-analyzer/zabbix",
                 "net-im/discord",
                 "net-misc/gnome-remote-desktop",
+                "x11-drivers/nvidia-drivers",
                 "sys-fs/bcachefs-tools",
                 "www-client/google-chrome",
                 "app-mobilephone/scrcpy",
@@ -145,6 +147,10 @@
                 // for obs-studio(https://bugs.gentoo.org/959751)
                 "kde-frameworks/extra-cmake-modules"
             ],
+            use: {
+                "media-video/ffmpeg": "amf v4l x264 x265 opus srt vaapi nvenc opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+                "media-video/ffmpeg-compat": "amf v4l x265 opus srt vaapi nvenc opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+            },
             "services": ["snapd"]
         },
         "i686": {
@@ -156,6 +162,22 @@
                 //"app-misc/tinysparql": "-localsearch"
             }
         },
+    },
+    variants: {
+        "gnome-paravirt": {
+            packages: [
+                "-genpack/systemimg",
+                "-net-wireless/iw",
+                "-x11-drivers/nvidia-drivers",
+                "genpack/paravirt"
+            ],
+            use: {
+                "media-libs/mesa": "vulkan VIDEO_CARDS: -intel -nouveau -radeon -radeonsi lavapipe virgl zink",
+                "media-video/ffmpeg": "v4l x264 x265 opus srt CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+                "media-video/ffmpeg-compat": "v4l x265 opus srt CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+                "media-video/obs-studio": "browser pipewire python v4l vlc websocket",
+            },
+        }
     }
 }
 // vm run --display=gtk gnome-$(uname -m).squashfs
