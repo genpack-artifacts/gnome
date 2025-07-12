@@ -31,6 +31,7 @@
         "media-video/ffmpeg-compat",
     ],
     buildtime_packages: [
+        "dev-build/automake",
         "dev-lang/tcl", // for srs
         "dev-build/cmake", // for srs
         "app-arch/deb2targz", // for obs plugins
