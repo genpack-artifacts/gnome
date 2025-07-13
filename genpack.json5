@@ -85,7 +85,6 @@
         "media-libs/libsdl2": "X", // for scrcpy
         "dev-libs/libdbusmenu": "gtk3",
         "net-analyzer/zabbix": "-postgres",
-        "sys-fs/squashfs-tools": "lzma lzo",
         "media-libs/opencv": "python opencl CPU_FLAGS_X86: avx avx2 f16c fma3 popcnt sse3 sse4_1 sse4_2 ssse3",
         "www-servers/apache": "APACHE2_MODULES: proxy proxy_http",
         "dev-libs/weston": "-X -desktop headless kiosk",
@@ -102,8 +101,7 @@
         "media-libs/libmediaart": "gtk -qt6"
     },
     mask : [
-        ">=dev-lang/python-3.14",
-        //"<dev-lang/python-3.13"
+        "=net-fs/samba-4.20.8-r1" // due to build errer
     ],
     license: {
         "sys-kernel/linux-firmware": "linux-fw-redistributable",
