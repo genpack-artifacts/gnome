@@ -14,6 +14,7 @@
         "media-video/libva-utils",
         "net-libs/libnsl", // for libnsl.so.3
         "media-video/vlc",
+        "media-plugins/gst-plugins-libav",
         "app-emulation/virt-viewer",
         "dev-util/glib-utils", // virt-viewer needs /usr/bin/glib-mkenums
         "app-admin/sudo",
