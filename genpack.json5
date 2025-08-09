@@ -53,7 +53,7 @@
         "dev-util/clinfo": null,
         "dev-util/glslang": null, // for glslang-1.4.313.0
         // obs-studio
-        "=media-video/obs-studio-31.0.4": null,
+        "media-video/obs-studio": null,
         "net-libs/mbedtls": null,
         "dev-libs/qr-code-generator": null,
         // ROCm
