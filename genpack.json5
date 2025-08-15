@@ -5,9 +5,10 @@
     packages: [
         "genpack/systemimg",
         "gnome-base/gnome",
+        "gnome-extra/gnome-browser-connector",
         "net-wireless/iw",
         "app-i18n/mozc",
-        "media-fonts/noto",
+        "media-fonts/noto-cjk",
         "media-fonts/noto-emoji",
         "media-sound/pavucontrol",
         "x11-apps/mesa-progs",
