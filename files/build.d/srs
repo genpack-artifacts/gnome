@@ -2,7 +2,7 @@
 set -e
 
 #SRS_DOWNLOAD_URL=`get-github-download-url ossrs srs '.*\.tar.gz$'`
-SRS_DOWNLOAD_URL="https://github.com/ossrs/srs/releases/download/v6.0-a2/srs-server-6.0-a2.tar.gz"
+SRS_DOWNLOAD_URL="https://github.com/ossrs/srs/releases/download/v6.0-b0/srs-server-6.0-b0.tar.gz"
 
 download $SRS_DOWNLOAD_URL | tar zxvf - -C /tmp
 cd /tmp/srs-server-*/trunk
@@ -19,4 +19,3 @@ cp packaging/redhat/srs.service /usr/lib/systemd/system/
 sed -i 's/\/var\/lib\/srs\/srs\.pid/\/run\/srs\/srs.pid/' /usr/lib/systemd/system/srs.service
 
 echo 'd /run/srs 0755 nobody nobody -' > /usr/lib/tmpfiles.d/srs.conf
-
