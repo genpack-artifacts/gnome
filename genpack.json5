@@ -1,17 +1,10 @@
 {
     name: "gnome",
-    gentoo_profile: "desktop/gnome/systemd",
+    profile: "gnome/baremetal",
     compression: "xz",
     packages: [
-        "genpack/systemimg",
-        "gnome-base/gnome",
-        "gnome-extra/gnome-browser-connector",
         "net-wireless/iw",
-        "app-i18n/mozc",
-        "media-fonts/noto-cjk",
-        "media-fonts/noto-emoji",
         "media-sound/pavucontrol",
-        "x11-apps/mesa-progs",
         "media-video/libva-utils",
         "net-libs/libnsl", // for libnsl.so.3
         "media-video/vlc",
@@ -21,7 +14,6 @@
         "app-emulation/virt-viewer",
         "dev-util/glib-utils", // virt-viewer needs /usr/bin/glib-mkenums
         "app-admin/sudo",
-        "app-misc/evtest",
         "net-misc/remmina",
         "net-misc/iperf",
         "app-misc/screen",
@@ -53,6 +45,7 @@
         "app-mobilephone/scrcpy": null,
         "dev-util/clinfo": null,
         "dev-util/glslang": null, // for glslang-1.4.313.0
+        "net-misc/gnome-remote-desktop": null, // for gnome-remote-desktop-48(vaapi support)
         // obs-studio
         "media-video/obs-studio": null,
         "net-libs/mbedtls": null,
