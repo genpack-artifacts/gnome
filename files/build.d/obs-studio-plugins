@@ -7,7 +7,8 @@ if [ "$arch" != "x86_64" ]; then
   exit 0
 fi
 
-PACKAGE_URL=`get-github-download-url sorayuki obs-multi-rtmp 'obs-multi-rtmp-.*x86_64-linux-gnu\.deb$'`
+#PACKAGE_URL=`get-github-download-url sorayuki obs-multi-rtmp 'obs-multi-rtmp-.*x86_64-linux-gnu\.deb$'`
+PACKAGE_URL='https://github.com/sorayuki/obs-multi-rtmp/releases/download/0.7.3/obs-multi-rtmp-0.7.3.0-x86_64-linux-gnu.deb'
 echo "Downloading '$PACKAGE_URL'..."
 download "$PACKAGE_URL" > /tmp/obs-multi-rtmp.deb
 deb2targz /tmp/obs-multi-rtmp.deb
