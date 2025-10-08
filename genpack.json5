@@ -14,7 +14,7 @@
         "app-emulation/virt-viewer",
         "dev-util/glib-utils", // virt-viewer needs /usr/bin/glib-mkenums
         "app-admin/sudo",
-        "net-misc/remmina",
+        "net-misc/gnome-connections",
         "net-misc/iperf",
         "app-misc/screen",
         "media-gfx/gimp",
@@ -46,6 +46,7 @@
         "dev-util/clinfo": null,
         "dev-util/glslang": null, // for glslang-1.4.313.0
         "net-misc/gnome-remote-desktop": null, // for gnome-remote-desktop-48(vaapi support)
+        "net-misc/gnome-connections": null, // for gnome-connections-48
         // obs-studio
         "media-video/obs-studio": null,
         "net-libs/mbedtls": null,
