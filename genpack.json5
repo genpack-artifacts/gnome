@@ -15,8 +15,14 @@
         "dev-util/glib-utils", // virt-viewer needs /usr/bin/glib-mkenums
         "app-admin/sudo",
         "net-misc/gnome-connections",
+        "gnome-extra/gnome-browser-connector",
         "net-misc/iperf",
         "app-misc/screen",
+        "dev-python/xxhash",
+        "dev-python/python-magic",
+        "dev-python/aiohttp",
+        "dev-python/aiosqlite",
+        "sys-fs/exfatprogs",
         "media-gfx/gimp",
         "dev-vcs/git",
         "sys-auth/rtkit",
@@ -45,8 +51,7 @@
         "app-mobilephone/scrcpy": null,
         "dev-util/clinfo": null,
         "dev-util/glslang": null, // for glslang-1.4.313.0
-        "net-misc/gnome-remote-desktop": null, // for gnome-remote-desktop-48(vaapi support)
-        "net-misc/gnome-connections": null, // for gnome-connections-48
+        "dev-python/aiosqlite": null,
         // obs-studio
         "media-video/obs-studio": null,
         "net-libs/mbedtls": null,
@@ -135,6 +140,7 @@
                 "net-misc/gnome-remote-desktop",
                 "x11-drivers/nvidia-drivers",
                 "sys-fs/bcachefs-tools",
+                "sys-fs/fscrypt",
                 "www-client/google-chrome",
                 "app-mobilephone/scrcpy",
                 "media-video/obs-studio",
