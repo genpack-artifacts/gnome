@@ -33,8 +33,8 @@
         "app-arch/deb2targz", // for obs plugins
     ],
     circulardep_breaker: {
-        "packages": ["dev-python/pillow", "media-libs/freetype","media-libs/harfbuzz","dev-libs/glib"],
-        "use": "-truetype -harfbuzz -cairo -sysprof"
+        "packages": ["dev-python/pillow","media-libs/libavif","media-libs/freetype","media-libs/harfbuzz","dev-libs/glib","media-libs/tiff","media-libs/libwebp"],
+        "use": "-truetype -harfbuzz -cairo -sysprof -webp -tiff -avif -gdk-pixbuf"
     },
     accept_keywords: {
         "sys-kernel/gentoo-kernel-bin": null, // Linux 6.12(LTS) does not work with RTL8852CE properly
