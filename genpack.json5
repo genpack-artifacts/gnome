@@ -29,6 +29,7 @@
         "www-servers/apache",
         "sys-power/nut",
         "net-dialup/picocom",
+        "app-backup/borgbackup",
         // srs
         "net-libs/libsrtp",
         "net-libs/srt",
