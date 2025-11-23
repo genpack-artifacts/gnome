@@ -27,6 +27,8 @@
         "dev-vcs/git",
         "sys-auth/rtkit",
         "www-servers/apache",
+        "sys-power/nut",
+        "net-dialup/picocom",
         // srs
         "net-libs/libsrtp",
         "net-libs/srt",
@@ -121,6 +123,7 @@
                 "video",
                 "input",
                 "usb",
+                "dialout",
             ]
         }
     ],
