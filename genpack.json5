@@ -55,6 +55,9 @@
         "dev-util/clinfo": null,
         "dev-util/glslang": null, // for glslang-1.4.313.0
         "dev-python/aiosqlite": null,
+        "media-libs/sdl3-ttf": null,
+        "net-misc/freerdp": null,
+        "net-misc/gnome-remote-desktop": null,
         // obs-studio
         "media-video/obs-studio": null,
         "net-libs/mbedtls": null,
