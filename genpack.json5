@@ -42,8 +42,8 @@
         "app-arch/deb2targz", // for obs plugins
     ],
     circulardep_breaker: {
-        "packages": ["dev-python/pillow","media-libs/libavif","media-libs/freetype","media-libs/harfbuzz","dev-libs/glib","media-libs/tiff","media-libs/libwebp"],
-        "use": "-truetype -harfbuzz -cairo -sysprof -webp -tiff -avif -gdk-pixbuf"
+        "packages": ["dev-python/pillow","media-libs/libavif","media-libs/freetype","media-libs/harfbuzz","dev-libs/glib","media-libs/tiff","media-libs/libwebp","media-video/ffmpeg"],
+        "use": "-truetype -harfbuzz -cairo -sysprof -webp -tiff -avif -gdk-pixbuf -sdl -v4l -svg -pulseaudio -libass"
     },
     accept_keywords: {
         "sys-kernel/gentoo-kernel-bin": null, // Linux 6.12(LTS) does not work with RTL8852CE properly
@@ -53,7 +53,6 @@
         "dev-cpp/abseil-cpp": null, // for abseil-cpp-20250512.0 mozc needs
         "app-mobilephone/scrcpy": null,
         "dev-util/clinfo": null,
-        "dev-util/glslang": null, // for glslang-1.4.313.0
         "dev-python/aiosqlite": null,
         "media-libs/sdl3-ttf": null,
         "net-misc/freerdp": null,
