@@ -11,6 +11,7 @@
         "media-plugins/gst-plugins-libav",
         "media-plugins/gst-plugins-x265",
         "media-plugins/gst-plugins-libde265",
+        "gui-libs/gdk-pixbuf-loader-webp",
         "app-emulation/virt-viewer",
         "dev-util/glib-utils", // virt-viewer needs /usr/bin/glib-mkenums
         "app-admin/sudo",
