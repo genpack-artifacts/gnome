@@ -6,6 +6,7 @@
         "net-wireless/iw",
         "media-sound/pavucontrol",
         "media-video/libva-utils",
+        "media-libs/libva-intel-driver",
         "net-libs/libnsl", // for libnsl.so.3
         "media-video/vlc",
         "media-plugins/gst-plugins-libav",
@@ -18,6 +19,8 @@
         "net-misc/gnome-connections",
         "gnome-extra/gnome-browser-connector",
         "net-misc/iperf",
+        "net-firewall/nftables",
+        "net-wireless/hostapd",
         "app-misc/screen",
         "dev-python/xxhash",
         "dev-python/python-magic",
