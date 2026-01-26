@@ -7,6 +7,7 @@
         "media-sound/pavucontrol",
         "media-video/libva-utils",
         "media-libs/libva-intel-driver",
+        "sys-firmware/sof-firmware",
         "net-libs/libnsl", // for libnsl.so.3
         "media-video/vlc",
         "media-plugins/gst-plugins-libav",
