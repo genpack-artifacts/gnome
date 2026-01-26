@@ -14,6 +14,7 @@
         "media-plugins/gst-plugins-x265",
         "media-plugins/gst-plugins-libde265",
         "gui-libs/gdk-pixbuf-loader-webp",
+        "gui-apps/waypipe",
         "app-emulation/virt-viewer",
         "dev-util/glib-utils", // virt-viewer needs /usr/bin/glib-mkenums
         "app-admin/sudo",
@@ -90,6 +91,7 @@
         "media-video/vlc": "x265 pulseaudio opus v4l vaapi",
         "media-video/obs-studio": "browser pipewire python v4l vlc websocket nvenc",
         "gnome-base/gnome-shell": "pipewire",
+        "gui-apps/waypipe": "ffmpeg lz4 systemtap vaapi zstd CPU_FLAGS_X86: avx2 avx512f sse3",
         "app-emulation/virt-viewer": "-libvirt",
         "x11-base/xorg-server": "xvfb",
         "net-misc/freerdp": "server",
