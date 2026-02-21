@@ -115,6 +115,9 @@
         // gnome
         "media-libs/libmediaart": "gtk -qt6"
     },
+    mask: [
+        ">=sys-kernel/gentoo-kernel-bin-6.19" // because of https://bugs.gentoo.org/970319
+    ],
     license: {
         "sys-kernel/linux-firmware": "linux-fw-redistributable",
         "www-client/google-chrome": "google-chrome",
