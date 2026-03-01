@@ -38,6 +38,7 @@
         "sys-power/nut",
         "net-dialup/picocom",
         "app-backup/borgbackup",
+        "sys-process/nvtop",
         // srs
         "net-libs/libsrtp",
         "net-libs/srt",
@@ -115,7 +116,8 @@
         "dev-qt/qtwebengine": "screencast vaapi webdriver",
         "dev-libs/libxml2": "icu",
         // gnome
-        "media-libs/libmediaart": "gtk -qt6"
+        "media-libs/libmediaart": "gtk -qt6",
+        "sys-process/nvtop": "VIDEO_CARDS: nvidia"
     },
     license: {
         "sys-kernel/linux-firmware": "linux-fw-redistributable",
