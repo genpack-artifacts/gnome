@@ -17,6 +17,7 @@
         "gui-libs/gdk-pixbuf-loader-webp",
         "gui-apps/waypipe",
         "app-emulation/virt-viewer",
+        "net-misc/remmina",
         "sys-apps/flatpak",
         "dev-util/glib-utils", // virt-viewer needs /usr/bin/glib-mkenums
         "app-admin/sudo",
