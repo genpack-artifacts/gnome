@@ -110,6 +110,7 @@
         "dev-python/pyqt6": "multimedia positioning websockets webchannel",
         "net-misc/remmina": "rdp vnc spice wayland",
         "media-libs/libcanberra": "alsa", // for mutter
+	"net-libs/ngtcp2": "gnutls", // for samba
         // gimp
         "media-libs/gegl": "cairo ffmpeg sdl2 v4l webp",
         "app-text/poppler": "cairo cjk",
