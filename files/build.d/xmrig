@@ -10,5 +10,5 @@ else
 fi
 
 echo 'Downloading xmrig...'
-download $(get-github-download-url xmrig xmrig "xmrig-.*-jammy-${ARCH_STR}\.tar\.gz$") | tar zxvf - -C /tmp
+curl -L $(get-github-download-url xmrig xmrig "xmrig-.*-jammy-${ARCH_STR}\.tar\.gz$") | tar zxvf - -C /tmp
 mv /tmp/xmrig-*/xmrig /usr/bin/
