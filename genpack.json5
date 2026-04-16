@@ -48,6 +48,7 @@
         "media-video/ffmpeg-compat",
     ],
     buildtime_packages: [
+        "sys-libs/binutils-libs", // objtool used by nvidia-drivers needs this
         "dev-build/automake",
         "dev-lang/tcl", // for srs
         "dev-build/cmake", // for srs
