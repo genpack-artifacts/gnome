@@ -1,0 +1,153 @@
+--- a/src/grd-session-rdp.c	2026-04-14 19:00:02.295094528 +0900
++++ b/src/grd-session-rdp.c	2026-04-14 19:59:52.119245185 +0900
+@@ -511,8 +511,16 @@
+   RdpPeerContext *rdp_peer_context = (RdpPeerContext *) rdp_input->context;
+   GrdSessionRdp *session_rdp = rdp_peer_context->session_rdp;
+   GrdRdpEventQueue *rdp_event_queue = session_rdp->rdp_event_queue;
++  static gboolean prev_kana_lock = FALSE;
++  gboolean kana_lock = !!(flags & KBD_SYNC_KANA_LOCK);
+ 
+-  g_debug ("[RDP] Received Synchronize event with flags 0x%08X", flags);
++  g_debug ("[RDP-KBD] SynchronizeEvent: flags=0x%08x "
++           "caps=%d num=%d scroll=%d kana=%d",
++           flags,
++           !!(flags & KBD_SYNC_CAPS_LOCK),
++           !!(flags & KBD_SYNC_NUM_LOCK),
++           !!(flags & KBD_SYNC_SCROLL_LOCK),
++           kana_lock);
+ 
+   if (!is_rdp_peer_flag_set (session_rdp, RDP_PEER_ACTIVATED) ||
+       session_rdp->is_view_only)
+@@ -530,6 +538,20 @@
+                                                  !!(flags & KBD_SYNC_CAPS_LOCK),
+                                                  !!(flags & KBD_SYNC_NUM_LOCK));
+ 
++  /* Zenkaku/Hankaku key on Japanese 109-key keyboard toggles Kana lock.
++   * Emit KEY_ZENKAKUHANKAKU (evdev 85) press+release on state change. */
++  if (kana_lock != prev_kana_lock)
++    {
++      g_debug ("[RDP-KBD] Kana lock toggled (%d -> %d): "
++               "emitting KEY_ZENKAKUHANKAKU (evdev 85)",
++               prev_kana_lock, kana_lock);
++      prev_kana_lock = kana_lock;
++      grd_rdp_event_queue_add_input_event_keyboard_keycode (
++        rdp_event_queue, 85, GRD_KEY_STATE_PRESSED);
++      grd_rdp_event_queue_add_input_event_keyboard_keycode (
++        rdp_event_queue, 85, GRD_KEY_STATE_RELEASED);
++    }
++
+   return TRUE;
+ }
+ 
+@@ -767,11 +789,50 @@
+   key_state = flags & KBD_FLAGS_RELEASE ? GRD_KEY_STATE_RELEASED
+                                         : GRD_KEY_STATE_PRESSED;
+ 
++  g_debug ("[RDP-KBD] KeyboardEvent: flags=0x%04x code=0x%02x "
++           "kbd_type=%u scancode=0x%02x fullcode=0x%04x "
++           "vkcode=0x%04x keycode=%u state=%s",
++           flags, code, keyboard_type, scancode, fullcode,
++           vkcode, keycode,
++           key_state == GRD_KEY_STATE_PRESSED ? "press" : "release");
++
+   if (is_pause_key_sequence (session_rdp, vkcode, flags))
+     return TRUE;
+ 
++  /* Toggle keys (e.g. Zenkaku/Hankaku on Japanese 109-key) arrive as:
++   *   release-only, press, release
++   * rather than the normal press, release sequence.
++   * We use two tables to track this:
++   *   pending_toggle:     release-only received, waiting for actual press
++   *   in_toggle_sequence: press received after release-only, waiting for final release
++   */
++  static GHashTable *pending_toggle = NULL;
++  static GHashTable *in_toggle_sequence = NULL;
++  if (!pending_toggle)
++    {
++      pending_toggle = g_hash_table_new (NULL, NULL);
++      in_toggle_sequence = g_hash_table_new (NULL, NULL);
++    }
++
+   if (key_state == GRD_KEY_STATE_PRESSED)
+     {
++      if (g_hash_table_contains (pending_toggle, GUINT_TO_POINTER (keycode)))
++        {
++          /* Press following a release-only: this is a toggle key.
++           * Emit one press+release but do NOT add to pressed_keys,
++           * so the final release-only is handled cleanly. */
++          g_hash_table_remove (pending_toggle, GUINT_TO_POINTER (keycode));
++          g_hash_table_add (in_toggle_sequence, GUINT_TO_POINTER (keycode));
++          g_debug ("[RDP-KBD] Toggle key press: scancode=0x%02x keycode=%u "
++                   "- emitting press+release once",
++                   scancode, keycode);
++          grd_rdp_event_queue_add_input_event_keyboard_keycode (
++            rdp_event_queue, keycode, GRD_KEY_STATE_PRESSED);
++          grd_rdp_event_queue_add_input_event_keyboard_keycode (
++            rdp_event_queue, keycode, GRD_KEY_STATE_RELEASED);
++          return TRUE;
++        }
++
+       if (!g_hash_table_add (session_rdp->pressed_keys,
+                              GUINT_TO_POINTER (keycode)))
+         return TRUE;
+@@ -780,7 +841,59 @@
+     {
+       if (!g_hash_table_remove (session_rdp->pressed_keys,
+                                 GUINT_TO_POINTER (keycode)))
+-        return TRUE;
++        {
++          /* Release-only event (key was never in pressed_keys). */
++
++          /* Modifier keys after Synchronize: suppress silently. */
++          switch (vkcode & 0xFF)
++            {
++            case 0x09: /* VK_TAB */
++            case 0x10: /* VK_SHIFT */
++            case 0x11: /* VK_CONTROL */
++            case 0x12: /* VK_MENU (Alt) */
++            case 0x14: /* VK_CAPITAL */
++            case 0x5B: /* VK_LWIN */
++            case 0x5C: /* VK_RWIN */
++            case 0x90: /* VK_NUMLOCK */
++            case 0x91: /* VK_SCROLL */
++            case 0xA0: /* VK_LSHIFT */
++            case 0xA1: /* VK_RSHIFT */
++            case 0xA2: /* VK_LCONTROL */
++            case 0xA3: /* VK_RCONTROL */
++            case 0xA4: /* VK_LMENU */
++            case 0xA5: /* VK_RMENU */
++              g_debug ("[RDP-KBD] Ignoring release-only modifier "
++                       "vkcode=0x%04x keycode=%u",
++                       vkcode, keycode);
++              return TRUE;
++            default:
++              break;
++            }
++
++          /* Final release of a toggle key sequence: suppress.
++           * This same event is also the release-only start of the next
++           * press, so simultaneously mark pending_toggle for keycode. */
++          if (g_hash_table_remove (in_toggle_sequence,
++                                   GUINT_TO_POINTER (keycode)))
++            {
++              g_debug ("[RDP-KBD] Toggle key final release suppressed: "
++                       "keycode=%u - also marking pending_toggle for next press",
++                       keycode);
++              if (keycode != 0)
++                g_hash_table_add (pending_toggle, GUINT_TO_POINTER (keycode));
++              return TRUE;
++            }
++
++          /* First release-only for an unknown key: mark as pending toggle. */
++          if (keycode != 0)
++            {
++              g_debug ("[RDP-KBD] Release-only start: scancode=0x%02x "
++                       "vkcode=0x%04x keycode=%u - marking pending_toggle",
++                       scancode, vkcode, keycode);
++              g_hash_table_add (pending_toggle, GUINT_TO_POINTER (keycode));
++            }
++          return TRUE;
++        }
+     }
+ 
+   grd_rdp_event_queue_add_input_event_keyboard_keycode (rdp_event_queue,

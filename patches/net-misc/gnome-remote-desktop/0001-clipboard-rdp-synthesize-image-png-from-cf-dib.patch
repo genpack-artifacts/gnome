@@ -1,0 +1,372 @@
+diff --git a/meson.build b/meson.build
+index e2d2e82..60045b8 100644
+--- a/meson.build
++++ b/meson.build
+@@ -63,6 +63,7 @@ if have_rdp
+   polkit_dep = dependency('polkit-gobject-1', version: polkit_req)
+   vulkan_dep = dependency('vulkan', version: vulkan_req)
+   winpr_dep = dependency('winpr3', version: freerdp_req)
++  gdk_pixbuf_dep = dependency('gdk-pixbuf-2.0')
+ 
+   glslc = find_program('glslc', required: true)
+   spirv_opt = find_program('spirv-opt', required: true)
+diff --git a/src/grd-clipboard-rdp.c b/src/grd-clipboard-rdp.c
+index 6e1718a..f7431b0 100644
+--- a/src/grd-clipboard-rdp.c
++++ b/src/grd-clipboard-rdp.c
+@@ -21,6 +21,7 @@
+ 
+ #include "grd-clipboard-rdp.h"
+ 
++#include <gdk-pixbuf/gdk-pixbuf.h>
+ #include <glib/gstdio.h>
+ #include <winpr/clipboard.h>
+ 
+@@ -124,6 +125,7 @@ struct _GrdClipboardRdp
+   GHashTable *format_data_cache;
+ 
+   GrdMimeType which_unicode_format;
++  GrdMimeType which_dib_format;
+   ServerFormatDataRequestContext *format_data_request_context;
+ 
+   GHashTable *pending_client_requests;
+@@ -166,6 +168,11 @@ send_mime_type_content_request (GrdClipboardRdp  *clipboard_rdp,
+ static void
+ create_new_winpr_clipboard (GrdClipboardRdp *clipboard_rdp);
+ 
++static uint8_t *
++convert_png_to_cf_dib (const uint8_t *png_data,
++                       uint32_t       png_size,
++                       uint32_t      *dst_size);
++
+ static void
+ update_allowed_server_formats (GrdClipboardRdp *clipboard_rdp,
+                                gboolean         received_response)
+@@ -281,10 +288,19 @@ send_mime_type_list (GrdClipboardRdp *clipboard_rdp,
+   CLIPRDR_FORMAT *cliprdr_formats;
+   ClipDataEntry *entry;
+   GrdMimeType mime_type;
++  gboolean has_bmp = FALSE;
++  gboolean has_png = FALSE;
+   uint32_t n_formats;
+   uint32_t i;
+   GList *l;
+ 
++  for (l = mime_type_list; l; l = l->next)
++    {
++      GrdMimeType mt = GPOINTER_TO_UINT (l->data);
++      if (mt == GRD_MIME_TYPE_IMAGE_BMP) has_bmp = TRUE;
++      if (mt == GRD_MIME_TYPE_IMAGE_PNG) has_png = TRUE;
++    }
++
+   if (g_hash_table_lookup_extended (clipboard_rdp->serial_entry_table,
+                                     GUINT_TO_POINTER (clipboard_rdp->serial),
+                                     NULL, (gpointer *) &entry))
+@@ -318,6 +334,7 @@ send_mime_type_list (GrdClipboardRdp *clipboard_rdp,
+           break;
+         case GRD_MIME_TYPE_IMAGE_BMP:
+           cliprdr_formats[i].formatId = CF_DIB;
++          clipboard_rdp->which_dib_format = GRD_MIME_TYPE_IMAGE_BMP;
+           break;
+         case GRD_MIME_TYPE_IMAGE_TIFF:
+           cliprdr_formats[i].formatId = CF_TIFF;
+@@ -362,6 +379,18 @@ send_mime_type_list (GrdClipboardRdp *clipboard_rdp,
+         g_list_append (clipboard_rdp->pending_server_formats, l->data);
+     }
+ 
++  /* When GNOME only has image/png, also advertise CF_DIB so that standard
++   * Windows apps (which only request CF_DIB) can paste the image. */
++  if (has_png && !has_bmp)
++    {
++      cliprdr_formats = g_realloc (cliprdr_formats,
++                                    (n_formats + 1) * sizeof (CLIPRDR_FORMAT));
++      memset (&cliprdr_formats[n_formats], 0, sizeof (CLIPRDR_FORMAT));
++      cliprdr_formats[n_formats].formatId = CF_DIB;
++      n_formats++;
++      clipboard_rdp->which_dib_format = GRD_MIME_TYPE_IMAGE_PNG;
++    }
++
+   format_list.common.msgType = CB_FORMAT_LIST;
+   format_list.formats = cliprdr_formats;
+   format_list.numFormats = n_formats;
+@@ -828,6 +857,15 @@ grd_clipboard_rdp_submit_requested_server_content (GrdClipboard *clipboard,
+     {
+       if (request_context->needs_conversion)
+         {
++          if (mime_type == GRD_MIME_TYPE_IMAGE_PNG)
++            {
++              dst_data = convert_png_to_cf_dib (src_data, src_size, &dst_size);
++              if (!dst_data)
++                g_warning ("[RDP.CLIPRDR] Converting clipboard content failed: "
++                           "PNG to CF_DIB conversion failed");
++            }
++          else
++            {
+           if (request_context->needs_null_terminator)
+             {
+               char *pnull_terminator;
+@@ -878,6 +916,7 @@ grd_clipboard_rdp_submit_requested_server_content (GrdClipboard *clipboard,
+               g_warning ("[RDP.CLIPRDR] Converting clipboard content for "
+                          "client failed: Failed to get converted data");
+             }
++            }  /* end else (WinPR conversion path) */
+         }
+       else
+         {
+@@ -1198,6 +1237,18 @@ cliprdr_client_format_list (CliprdrServerContext      *cliprdr_context,
+                 }
+               break;
+             case CF_DIB:
++              /* Also advertise image/png synthesized on demand from CF_DIB,
++               * unless the client already sent a native image/png format. */
++              if (!g_hash_table_contains (found_mime_types,
++                                          GUINT_TO_POINTER (GRD_MIME_TYPE_IMAGE_PNG)))
++                {
++                  mime_type_table = g_malloc0 (sizeof (GrdMimeTypeTable));
++                  mime_type_table->mime_type = GRD_MIME_TYPE_IMAGE_PNG;
++                  mime_type_table->rdp.format_id = format_list->formats[i].formatId;
++                  mime_type_tables = g_list_append (mime_type_tables, mime_type_table);
++                  g_hash_table_add (found_mime_types,
++                                    GUINT_TO_POINTER (GRD_MIME_TYPE_IMAGE_PNG));
++                }
+               mime_type = GRD_MIME_TYPE_IMAGE_BMP;
+               break;
+             case CF_TIFF:
+@@ -1623,10 +1674,13 @@ cliprdr_client_format_data_request (CliprdrServerContext              *cliprdr_c
+                                             GRD_CFSTR_MIME_HTML);
+       break;
+     case CF_DIB:
+-      mime_type = GRD_MIME_TYPE_IMAGE_BMP;
++      mime_type = clipboard_rdp->which_dib_format;
+       needs_conversion = TRUE;
+-      src_format_id = ClipboardGetFormatId (clipboard_rdp->system,
+-                                            "image/bmp");
++      if (mime_type == GRD_MIME_TYPE_IMAGE_BMP)
++        src_format_id = ClipboardGetFormatId (clipboard_rdp->system,
++                                              "image/bmp");
++      /* For GRD_MIME_TYPE_IMAGE_PNG, conversion bypasses WinPR and is
++       * handled directly in grd_clipboard_rdp_submit_requested_server_content */
+       break;
+     case CF_TIFF:
+       mime_type = GRD_MIME_TYPE_IMAGE_TIFF;
+@@ -1801,6 +1855,190 @@ get_uri_list_from_packet_file_list (GrdClipboardRdp *clipboard_rdp,
+   return (uint8_t *) g_array_free (g_steal_pointer (&dst_data), FALSE);
+ }
+ 
++static uint8_t *
++convert_png_to_cf_dib (const uint8_t *png_data,
++                       uint32_t       png_size,
++                       uint32_t      *dst_size)
++{
++  GdkPixbufLoader *loader = NULL;
++  GdkPixbuf *pixbuf = NULL;
++  GError *error = NULL;
++  const uint8_t *src_pixels;
++  uint8_t *dib_data;
++  uint32_t width, height, src_rowstride;
++  uint32_t dib_rowstride, total_size;
++  int n_channels, row, col;
++
++  *dst_size = 0;
++
++  loader = gdk_pixbuf_loader_new_with_type ("png", &error);
++  if (!loader)
++    {
++      g_warning ("[RDP.CLIPRDR] PNG to CF_DIB: Failed to create PNG loader: %s",
++                 error->message);
++      g_clear_error (&error);
++      return NULL;
++    }
++
++  if (!gdk_pixbuf_loader_write (loader, png_data, png_size, &error))
++    {
++      g_warning ("[RDP.CLIPRDR] PNG to CF_DIB: Failed to write PNG data: %s",
++                 error->message);
++      g_clear_error (&error);
++      gdk_pixbuf_loader_close (loader, NULL);
++      g_object_unref (loader);
++      return NULL;
++    }
++
++  if (!gdk_pixbuf_loader_close (loader, &error))
++    {
++      g_warning ("[RDP.CLIPRDR] PNG to CF_DIB: Failed to close PNG loader: %s",
++                 error->message);
++      g_clear_error (&error);
++      g_object_unref (loader);
++      return NULL;
++    }
++
++  pixbuf = gdk_pixbuf_loader_get_pixbuf (loader);
++  if (!pixbuf)
++    {
++      g_warning ("[RDP.CLIPRDR] PNG to CF_DIB: No pixbuf from loader");
++      g_object_unref (loader);
++      return NULL;
++    }
++
++  width         = (uint32_t) gdk_pixbuf_get_width (pixbuf);
++  height        = (uint32_t) gdk_pixbuf_get_height (pixbuf);
++  n_channels    = gdk_pixbuf_get_n_channels (pixbuf);
++  src_rowstride = (uint32_t) gdk_pixbuf_get_rowstride (pixbuf);
++  src_pixels    = gdk_pixbuf_get_pixels (pixbuf);
++
++  /* CF_DIB rows must be padded to a 4-byte boundary */
++  dib_rowstride = (width * 3 + 3) & ~3u;
++  total_size    = 40 + dib_rowstride * height;
++
++  dib_data = g_malloc0 (total_size);
++
++  /* BITMAPINFOHEADER (40 bytes, little-endian) */
++  {
++    uint32_t v32; int32_t vi32; uint16_t v16;
++    v32 = 40;                        memcpy (dib_data +  0, &v32,  4); /* biSize */
++    vi32 = (int32_t) width;          memcpy (dib_data +  4, &vi32, 4); /* biWidth */
++    vi32 = (int32_t) height;         memcpy (dib_data +  8, &vi32, 4); /* biHeight (bottom-up) */
++    v16 = 1;                         memcpy (dib_data + 12, &v16,  2); /* biPlanes */
++    v16 = 24;                        memcpy (dib_data + 14, &v16,  2); /* biBitCount */
++    /* biCompression = 0 (BI_RGB), already zeroed */
++    v32 = dib_rowstride * height;    memcpy (dib_data + 20, &v32,  4); /* biSizeImage */
++    /* XPelsPerMeter, YPelsPerMeter, ClrUsed, ClrImportant all 0 */
++  }
++
++  /* Copy pixels: GdkPixbuf is top-down RGB(A); CF_DIB is bottom-up BGR */
++  for (row = 0; row < (int) height; row++)
++    {
++      const uint8_t *src_row = src_pixels +
++                               ((int) height - 1 - row) * (int) src_rowstride;
++      uint8_t *dst_row = dib_data + 40 + (uint32_t) row * dib_rowstride;
++
++      for (col = 0; col < (int) width; col++)
++        {
++          dst_row[col * 3 + 0] = src_row[col * n_channels + 2]; /* B */
++          dst_row[col * 3 + 1] = src_row[col * n_channels + 1]; /* G */
++          dst_row[col * 3 + 2] = src_row[col * n_channels + 0]; /* R */
++        }
++    }
++
++  g_object_unref (loader);
++
++  *dst_size = total_size;
++  return dib_data;
++}
++
++static uint8_t *
++convert_cf_dib_to_png (GrdClipboardRdp *clipboard_rdp,
++                       uint8_t         *src_data,
++                       uint32_t         src_size,
++                       uint32_t        *dst_size)
++{
++  uint32_t bmp_format_id;
++  uint32_t bmp_size = 0;
++  uint8_t *bmp_data = NULL;
++  GdkPixbufLoader *loader = NULL;
++  GdkPixbuf *pixbuf = NULL;
++  GError *error = NULL;
++  gchar *png_data = NULL;
++  gsize png_size = 0;
++
++  *dst_size = 0;
++
++  bmp_format_id = ClipboardGetFormatId (clipboard_rdp->system, "image/bmp");
++  if (!ClipboardSetData (clipboard_rdp->system, CF_DIB, src_data, src_size))
++    {
++      g_warning ("[RDP.CLIPRDR] CF_DIB to PNG: Failed to set DIB data");
++      return NULL;
++    }
++
++  bmp_data = ClipboardGetData (clipboard_rdp->system, bmp_format_id, &bmp_size);
++  if (!bmp_data)
++    {
++      g_warning ("[RDP.CLIPRDR] CF_DIB to PNG: Failed to convert DIB to BMP");
++      return NULL;
++    }
++
++  loader = gdk_pixbuf_loader_new_with_type ("bmp", &error);
++  if (!loader)
++    {
++      g_warning ("[RDP.CLIPRDR] CF_DIB to PNG: Failed to create BMP loader: %s",
++                 error->message);
++      g_clear_error (&error);
++      free (bmp_data);
++      return NULL;
++    }
++
++  if (!gdk_pixbuf_loader_write (loader, bmp_data, bmp_size, &error))
++    {
++      g_warning ("[RDP.CLIPRDR] CF_DIB to PNG: Failed to write BMP data: %s",
++                 error->message);
++      g_clear_error (&error);
++      gdk_pixbuf_loader_close (loader, NULL);
++      g_object_unref (loader);
++      free (bmp_data);
++      return NULL;
++    }
++  free (bmp_data);
++
++  if (!gdk_pixbuf_loader_close (loader, &error))
++    {
++      g_warning ("[RDP.CLIPRDR] CF_DIB to PNG: Failed to close BMP loader: %s",
++                 error->message);
++      g_clear_error (&error);
++      g_object_unref (loader);
++      return NULL;
++    }
++
++  pixbuf = gdk_pixbuf_loader_get_pixbuf (loader);
++  if (!pixbuf)
++    {
++      g_warning ("[RDP.CLIPRDR] CF_DIB to PNG: No pixbuf from loader");
++      g_object_unref (loader);
++      return NULL;
++    }
++
++  if (!gdk_pixbuf_save_to_buffer (pixbuf, &png_data, &png_size,
++                                   "png", &error, NULL))
++    {
++      g_warning ("[RDP.CLIPRDR] CF_DIB to PNG: Failed to encode PNG: %s",
++                 error->message);
++      g_clear_error (&error);
++      g_object_unref (loader);
++      return NULL;
++    }
++
++  g_object_unref (loader);
++
++  *dst_size = (uint32_t) png_size;
++  return (uint8_t *) png_data;
++}
++
+ static uint8_t *
+ convert_client_content_for_server (GrdClipboardRdp *clipboard_rdp,
+                                    uint8_t         *src_data,
+@@ -1819,6 +2057,9 @@ convert_client_content_for_server (GrdClipboardRdp *clipboard_rdp,
+ 
+   *dst_size = 0;
+ 
++  if (mime_type == GRD_MIME_TYPE_IMAGE_PNG)
++    return convert_cf_dib_to_png (clipboard_rdp, src_data, src_size, dst_size);
++
+   switch (mime_type)
+     {
+     case GRD_MIME_TYPE_TEXT_PLAIN_UTF8:
+@@ -2032,6 +2273,7 @@ prepare_client_content_for_server (GrdClipboardRdp   *clipboard_rdp,
+     case GRD_MIME_TYPE_TEXT_UTF8_STRING:
+     case GRD_MIME_TYPE_TEXT_HTML:
+     case GRD_MIME_TYPE_IMAGE_BMP:
++    case GRD_MIME_TYPE_IMAGE_PNG:
+     case GRD_MIME_TYPE_TEXT_URILIST:
+     case GRD_MIME_TYPE_XS_GNOME_COPIED_FILES:
+       dst_data = convert_client_content_for_server (clipboard_rdp,
+diff --git a/src/meson.build b/src/meson.build
+index dbf3529..4f94888 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -281,6 +281,7 @@ if have_rdp
+     opus_dep,
+     vulkan_dep,
+     winpr_dep,
++    gdk_pixbuf_dep,
+   ]
+ endif
+ 
