@@ -1,0 +1,18 @@
+# ref: srs/files/usr/lib/systemd/system/srs.service
+# 公式 media-video/srs は OpenRC の init.d しか同梱しないため、genpack(systemd)用に自前定義。
+# 設定は公式同梱の /etc/srs/srs.conf を使用 (daemon off; のため systemd は foreground 運用)。
+# バイナリ名は srs-media (公式ebuildの newbin objs/srs srs-media)。
+[Unit]
+Description=SRS (Simple Realtime Server) media streaming server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/srs-media -c /etc/srs/srs.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
