@@ -7,6 +7,7 @@
         "media-sound/pavucontrol",
         "media-video/libva-utils",
         "media-libs/libva-intel-driver",
+        "media-libs/libva-intel-media-driver",
         "sys-firmware/sof-firmware",
         "net-libs/libnsl", // for libnsl.so.3
         "media-video/vlc",
@@ -14,6 +15,7 @@
         "media-plugins/gst-plugins-libav",
         "media-plugins/gst-plugins-x265",
         "media-plugins/gst-plugins-libde265",
+        "media-plugins/gst-plugins-aom", // AV1
         "media-libs/nvidia-vaapi-driver",
         "gui-libs/gdk-pixbuf-loader-webp",
         "gui-apps/waypipe",
@@ -45,17 +47,16 @@
         "net-dialup/picocom",
         "app-backup/borgbackup",
         "sys-process/nvtop",
-        // srs
-        "net-libs/libsrtp",
-        "net-libs/srt",
+        "sci-ml/llama-cpp", // ref: llama-cpp/genpack.json5 (overlay/sci-ml/llama-cpp の ebuild と対)
+        // srs: 公式 media-video/srs (旧 build.d/srs.sh を置換)。バイナリは /usr/bin/srs-media。
+        // net-libs/srt は media-video/ffmpeg[srt] が引くため明示不要。libsrtp は rtc=off で不要。
+        // ref: srs/genpack.json5
+        "media-video/srs",
         "media-video/ffmpeg-compat",
     ],
     buildtime_packages: [
-        "sys-libs/binutils-libs", // objtool used by nvidia-drivers needs this
-        "dev-build/automake",
-        "dev-lang/tcl", // for srs
-        "dev-build/cmake", // for srs
         "app-arch/deb2targz", // for obs plugins
+        "sys-libs/binutils-libs", // objtool used by nvidia-drivers needs this
     ],
     circulardep_breaker: {
         "packages": ["dev-python/pillow","media-libs/libavif","media-libs/freetype","media-libs/harfbuzz","dev-libs/glib","media-libs/tiff","media-libs/libwebp","media-video/ffmpeg"],
@@ -72,6 +73,9 @@
         "net-misc/freerdp": null,
         "net-misc/gnome-remote-desktop": null,
         "media-libs/nvidia-vaapi-driver": null,
+        "media-libs/libva-intel-media-driver": null,
+        "media-libs/libvpl": null,
+        "media-libs/gmmlib": null, // for latest libva-intel-media-driver
         // obs-studio
         "media-video/obs-studio": null,
         "net-libs/mbedtls": null,
@@ -83,12 +87,13 @@
         "dev-libs/rocm-device-libs": null,
         "dev-build/rocm-cmake": null,
         "dev-util/hipcc": null,
-        "dev-libs/roct-thunk-interface": null
+        "dev-libs/roct-thunk-interface": null,
+        "media-video/srs": null, // ~amd64
     },
     use: {
         "genpack/systemimg": "baremetal",
         "sys-boot/grub": "GRUB_PLATFORMS: pc efi-32",
-        "sys-apps/systemd": "policykit",
+        "sys-apps/systemd": "policykit tpm cryptsetup",
         "app-i18n/mozc": "ibus renderer",
         "sys-libs/zlib": "minizip",
         "media-fonts/noto": "cjk",
@@ -98,11 +103,12 @@
         "media-video/pipewire": "gsettings echo-cancel ffmpeg extra sound-server",
         "media-video/ffmpeg": "v4l x264 x265 opus srt opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
         "media-video/ffmpeg-compat": "v4l x265 opus srt opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+        "media-video/srs": "srt h265 threads", // SRT取込 + H.265 + マルチスレッド
         "media-video/vlc": "x265 pulseaudio opus v4l vaapi srt live dav1d",
-        "media-video/mpv": "-X -xv nvenc",
+        "media-video/mpv": "-X -xv vaapi nvenc",
         "media-plugins/gst-plugins-meta": "ffmpeg opus v4l vaapi",
         "media-libs/gst-plugins-bad": "vaapi",
-        "media-video/obs-studio": "browser pipewire python v4l vlc websocket nvenc",
+        "media-video/obs-studio": "browser pipewire python v4l -vlc websocket nvenc", // vlc dep suspended because of migration to 4.0
         "gnome-base/gnome-shell": "pipewire",
         "gui-apps/waypipe": "ffmpeg lz4 systemtap vaapi zstd CPU_FLAGS_X86: avx2 avx512f sse3",
         "app-emulation/virt-viewer": "-libvirt",
@@ -136,7 +142,8 @@
         "www-client/google-chrome": "google-chrome",
         "net-im/discord": "all-rights-reserved",
         "media-video/amdgpu-pro-amf": "AMD-GPU-PRO-EULA", // for ffmpeg[amf]
-        "x11-drivers/nvidia-drivers": "NVIDIA-2025"
+        "x11-drivers/nvidia-drivers": "NVIDIA-2025",
+        "media-libs/libva-intel-media-driver": "no-source-code",
     },
     users: [
         {
@@ -168,7 +175,6 @@
                 "net-im/discord",
                 "net-misc/gnome-remote-desktop",
                 "x11-drivers/nvidia-drivers",
-                "sys-fs/bcachefs-tools",
                 "sys-fs/fscrypt",
                 "www-client/google-chrome",
                 "app-mobilephone/scrcpy",
@@ -177,7 +183,7 @@
                 "kde-frameworks/extra-cmake-modules"
             ],
             use: {
-                "media-video/ffmpeg": "amf v4l x264 x265 opus srt vaapi nvenc opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
+                "media-video/ffmpeg": "amf v4l x264 x265 opus srt vaapi nvenc opencl qsv CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
                 "media-video/ffmpeg-compat": "amf v4l x265 opus srt vaapi nvenc opencl CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
             },
             "services": ["snapd"]
