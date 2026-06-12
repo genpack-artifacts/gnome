@@ -1,0 +1,32 @@
+From: walbrix infra <shimada@walbrix.com>
+Date: Thu, 11 Jun 2026 18:30:00 +0900
+Subject: [PATCH] application: fall back to GLibUnix.signal_add with GLib >= 2.80
+
+With dev-libs/glib >= 2.80 the Unix-specific introspection API
+(g_unix_signal_add etc.) was moved out of the GLib-2.0 namespace into
+GLibUnix-2.0. On systems where GLib.unix_signal_add is no longer
+available (observed with glib-2.88.1 + pygobject-3.50.1), the
+native messaging host raises AttributeError during Application.__init__
+and exits immediately, which the browser reports as
+"Native host has exited."
+
+Try the old API first and fall back to GLibUnix.signal_add.
+
+--- a/gnome_browser_connector/application.py	2022-09-07 17:03:51.000000000 +0900
++++ b/gnome_browser_connector/application.py	2026-06-11 18:01:07.056348359 +0900
+@@ -41,7 +41,14 @@
+             "Run as browser messaging host"
+         )
+ 
+-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self.on_sigint, None)
++        try:
++            GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self.on_sigint, None)
++        except AttributeError:
++            # GLib >= 2.80 moved Unix-specific API to the GLibUnix namespace
++            import gi
++            gi.require_version('GLibUnix', '2.0')
++            from gi.repository import GLibUnix
++            GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self.on_sigint, None)
+ 
+         self._stdin: GLib.IOChannel = GLib.IOChannel.unix_new(sys.stdin.fileno())
+         self._stdin.set_encoding(None)
