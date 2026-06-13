@@ -1,0 +1,50 @@
+From: Tomoatsu Shimada <shimada@walbrix.com>
+Subject: [PATCH] rdp-view-creator-avc: Fall back without HOST_CACHED if no
+ matching memory type
+
+The VAAPI AVC view creator allocates its state buffer requesting
+HOST_VISIBLE | HOST_COHERENT | HOST_CACHED simultaneously.  On some
+integrated GPUs (observed on Intel UHD Graphics 600 / Gemini Lake with
+Mesa ANV) no single Vulkan memory type satisfies all three at once:
+HOST_COHERENT (write-combined) and HOST_CACHED are exposed on separate
+memory types only.  As a result, get_memory_type_index() fails with
+"Failed to find memory type index", the VAAPI encode session is never
+created, and grd silently falls back to the software RFX progressive
+path -- pegging the CPU when screen content changes.
+
+HOST_CACHED is only a CPU-readback performance hint, not a correctness
+requirement, so retry the allocation without it when the first attempt
+fails.  Drivers that do expose a memory type with all three bits (e.g.
+recent Intel Xe, AMD) continue to use it as before.
+
+---
+ src/grd-rdp-view-creator-avc.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/src/grd-rdp-view-creator-avc.c b/src/grd-rdp-view-creator-avc.c
+--- a/src/grd-rdp-view-creator-avc.c
++++ b/src/grd-rdp-view-creator-avc.c
+@@ -671,9 +671,21 @@ create_state_buffer (GrdRdpViewCreatorAVC  *view_creator_avc,
+
+   *state_buffer_host = grd_vk_buffer_new (view_creator_avc->device,
+                                           &buffer_descriptor,
+-                                          error);
++                                          NULL);
+   if (!(*state_buffer_host))
+-    return FALSE;
++    {
++      /* HOST_CACHED and HOST_COHERENT do not coexist in any memory type on
++       * some integrated GPUs (e.g. Intel Gemini Lake with Mesa ANV). The
++       * HOST_CACHED bit is only a CPU-readback performance hint, so retry
++       * without it if the first allocation fails. */
++      buffer_descriptor.memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
++                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
++      *state_buffer_host = grd_vk_buffer_new (view_creator_avc->device,
++                                              &buffer_descriptor,
++                                              error);
++      if (!(*state_buffer_host))
++        return FALSE;
++    }
+
+   memory = grd_vk_buffer_get_memory (*state_buffer_host);
+

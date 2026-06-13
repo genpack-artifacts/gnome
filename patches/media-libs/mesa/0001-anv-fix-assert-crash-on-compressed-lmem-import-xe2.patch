@@ -1,0 +1,44 @@
+anv: fix assert/crash in import of compressed local memory on xe2+
+
+Backport of Mesa commit 351c5d889cb3 (Lionel Landwerlin, 2026-06-09) onto
+media-libs/mesa-26.0.7. Carry locally until the fix lands in a Portage
+release. Closes the anv NULL deref that crashes gnome-remote-desktop on
+Intel Arc B580 (Xe2) when libva-intel-media-driver (iHD) is present:
+importing a compressed local-memory dma-buf without a
+VkMemoryDedicatedAllocateInfo leaves image == NULL in the else branch,
+then image->vk.format is dereferenced (fault at 0x48).
+
+There is no requirement that imported compressed memory is tied to an
+image.
+
+In practice it's unlikely to happen since unless drirc
+anv_enable_buffer_comp is enabled we don't list the compressed memory
+typed for anything but images. But you can build a case hitting the
+assert without even creating an image.
+
+Fixes: 5a05a39e56 ("anv: Limit the SCANOUT flag to color images")
+Fixes: b7f7f1c74f ("anv: Treat imported compressed buffers as displayable (xe2)")
+Closes: https://gitlab.freedesktop.org/mesa/mesa/-/work_items/15578
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/42121>
+
+diff --git a/src/intel/vulkan/anv_device.c b/src/intel/vulkan/anv_device.c
+index bcf9183..e148ed2 100644
+--- a/src/intel/vulkan/anv_device.c
++++ b/src/intel/vulkan/anv_device.c
+@@ -1622,7 +1622,7 @@ VkResult anv_AllocateMemory(
+                VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT ||
+              fd_info->handleType ==
+                VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
+-      if (alloc_flags & ANV_BO_ALLOC_COMPRESSED) {
++      if ((alloc_flags & ANV_BO_ALLOC_COMPRESSED) && image != NULL) {
+          /* First, when importing a compressed buffer on Xe2+, we are sure
+           * about that the buffer is from a resource created with modifiers
+           * supporting compression, even the info of modifier is not available
+@@ -1640,7 +1640,6 @@ VkResult anv_AllocateMemory(
+           * heap and then PAT entry in the later vm_bind stage.
+           */
+          assert(device->info->ver >= 20);
+-         assert(image);
+          if (vk_format_is_color(image->vk.format))
+             alloc_flags |= ANV_BO_ALLOC_SCANOUT;
+       }

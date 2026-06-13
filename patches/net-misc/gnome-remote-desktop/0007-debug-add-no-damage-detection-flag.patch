@@ -1,0 +1,77 @@
+From: Tomoatsu Shimada <shimada@walbrix.com>
+Subject: [PATCH] debug: Add 'no-damage-detection' flag to disable GPU damage
+ detection
+
+Add a new GNOME_REMOTE_DESKTOP_DEBUG flag 'no-damage-detection' that
+bypasses the GPU compute shader damage detection pipeline and forces
+every frame to be re-encoded in full (equivalent to the 'simple' path
+that is used for the first frame of each session).
+
+Normally, from the second frame onward, grd submits a Vulkan compute
+shader that compares the new and old source images block-by-block and
+only marks changed 16x16 blocks as dirty.  On some GPU/driver
+combinations (observed on Intel Arc B580 / BMG / Xe2 with Mesa anv,
+and also on Celeron N4020 / Gemini Lake / ANV) the damage detection
+produces false "unchanged" results, causing stale block content to
+remain visible on the client side.
+
+With 'no-damage-detection' set, every block is always marked dirty so
+the encoder re-encodes the full frame each time.  This trades higher
+bandwidth and slightly higher GPU load for visually correct output.
+
+Typical use:
+
+  GNOME_REMOTE_DESKTOP_DEBUG=no-damage-detection
+
+Or in combination with other flags:
+
+  GNOME_REMOTE_DESKTOP_DEBUG=no-damage-detection,no-avc444
+
+The flag leaves the AVC444 dual-stream path and the VAAPI encoder path
+unaffected; only the compute-shader step that feeds the encoder input
+is changed.
+
+---
+ src/grd-debug.c              | 1 +
+ src/grd-debug.h              | 1 +
+ src/grd-rdp-view-creator-avc.c | 3 ++-
+ 3 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/grd-debug.c b/src/grd-debug.c
+index e9478e8..5cb24d9 100644
+--- a/src/grd-debug.c
++++ b/src/grd-debug.c
+@@ -32,6 +32,7 @@ static const GDebugKey grd_debug_keys[] = {
+   { "va-times", GRD_DEBUG_VA_TIMES },
+   { "vkva-renderer", GRD_DEBUG_VKVA },
+   { "no-avc444", GRD_DEBUG_NO_AVC444 },
++  { "no-damage-detection", GRD_DEBUG_NO_DAMAGE_DETECTION },
+ };
+
+ static GrdDebugFlags debug_flags;
+diff --git a/src/grd-debug.h b/src/grd-debug.h
+index 2b7a6ac..8b6237c 100644
+--- a/src/grd-debug.h
++++ b/src/grd-debug.h
+@@ -30,6 +30,7 @@ typedef enum _GrdDebugFlags
+   GRD_DEBUG_VA_TIMES = 1 << 4,
+   GRD_DEBUG_VKVA = 1 << 5,
+   GRD_DEBUG_NO_AVC444 = 1 << 6,
++  GRD_DEBUG_NO_DAMAGE_DETECTION = 1 << 7,
+ } GrdDebugFlags;
+
+ GrdDebugFlags grd_get_debug_flags (void);
+diff --git a/src/grd-rdp-view-creator-avc.c b/src/grd-rdp-view-creator-avc.c
+index 870e647..34fe970 100644
+--- a/src/grd-rdp-view-creator-avc.c
++++ b/src/grd-rdp-view-creator-avc.c
+@@ -528,7 +528,8 @@ grd_rdp_view_creator_avc_create_view (GrdRdpViewCreator  *view_creator,
+     command_buffers->init_state_buffers;
+   ++n_buffer_submit_infos;
+
+-  if (src_image_old)
++  if (src_image_old &&
++      !(grd_get_debug_flags () & GRD_DEBUG_NO_DAMAGE_DETECTION))
+     create_dual_view = command_buffers->create_dual_view_difference;
+   else
+     create_dual_view = command_buffers->create_dual_view_simple;

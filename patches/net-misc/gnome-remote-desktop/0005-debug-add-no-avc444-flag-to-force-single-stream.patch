@@ -1,0 +1,52 @@
+Add 'no-avc444' debug flag to force AVC420 single-stream encoding.
+
+RDP's AVC444 capability uses two H.264 streams (main + auxiliary) to
+transmit YUV 4:4:4 chroma. This roughly doubles bandwidth and doubles
+packet-loss surface compared to AVC420 single-stream, which hurts
+significantly on cellular / VPN / WAN links.
+
+This adds a new GRD_DEBUG flag 'no-avc444'. When set, the server
+suppresses its advertised AVC444 capability so the encoder path
+always falls back to AVC420 single-stream even on clients that would
+otherwise negotiate AVC444. Behaviour without the flag is unchanged.
+
+Typical use:
+
+  GNOME_REMOTE_DESKTOP_DEBUG=no-avc444
+
+Or in combination with vkva-renderer:
+
+  GNOME_REMOTE_DESKTOP_DEBUG=vkva-renderer,no-avc444
+
+--- a/src/grd-debug.h
++++ b/src/grd-debug.h
+@@ -27,6 +27,7 @@ typedef enum _GrdDebugFlags
+   GRD_DEBUG_VK_TIMES = 1 << 3,
+   GRD_DEBUG_VA_TIMES = 1 << 4,
+   GRD_DEBUG_VKVA = 1 << 5,
++  GRD_DEBUG_NO_AVC444 = 1 << 6,
+ } GrdDebugFlags;
+
+ GrdDebugFlags grd_get_debug_flags (void);
+--- a/src/grd-debug.c
++++ b/src/grd-debug.c
+@@ -30,6 +30,7 @@ static const GDebugKey grd_debug_keys[] = {
+   { "vk-times", GRD_DEBUG_VK_TIMES },
+   { "va-times", GRD_DEBUG_VA_TIMES },
+   { "vkva-renderer", GRD_DEBUG_VKVA },
++  { "no-avc444", GRD_DEBUG_NO_AVC444 },
+ };
+
+ static GrdDebugFlags debug_flags;
+--- a/src/grd-rdp-render-context.c
++++ b/src/grd-rdp-render-context.c
+@@ -560,6 +560,9 @@ create_hw_accelerated_encode_session (GrdRdpRenderContext        *render_context
+
+   grd_rdp_dvc_graphics_pipeline_get_capabilities (graphics_pipeline,
+                                                   &have_avc444, &have_avc420);
++  if (have_avc420 && (grd_get_debug_flags () & GRD_DEBUG_NO_AVC444))
++    have_avc444 = FALSE;
++
+   if ((have_avc444 || have_avc420) && render_context->hwaccel_vaapi &&
+       (!is_gpu_driver_intel (render_context) ||
+        grd_get_debug_flags () & GRD_DEBUG_VKVA))

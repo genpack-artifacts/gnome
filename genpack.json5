@@ -3,6 +3,10 @@
     profile: "gnome/baremetal",
     compression: "xz",
     packages: [
+        "app-admin/sysstat",
+        "sys-process/psmisc",
+        "sys-process/lsof",
+        "sys-process/iotop",
         "net-wireless/iw",
         "media-sound/pavucontrol",
         "media-video/libva-utils",
@@ -58,10 +62,14 @@
         "app-arch/deb2targz", // for obs plugins
         "sys-libs/binutils-libs", // objtool used by nvidia-drivers needs this
     ],
-    circulardep_breaker: {
-        "packages": ["dev-python/pillow","media-libs/libavif","media-libs/freetype","media-libs/harfbuzz","dev-libs/glib","media-libs/tiff","media-libs/libwebp","media-video/ffmpeg"],
-        "use": "-truetype -harfbuzz -cairo -sysprof -webp -tiff -avif -gdk-pixbuf -sdl -v4l -svg -pulseaudio -libass"
-    },
+    // patches/ を当てるパッケージは binpkg を引かずに必ずソースから再ビルドさせる。
+    // --usepkg-exclude と --buildpkg-exclude の両方に渡るので、共有 binpkg キャッシュ
+    // との双方向汚染も防ぐ (= patched バイナリを共有キャッシュへ push しない)。
+    // これまで手動でコンテナ内 unmerge/merge していた運用を置き換える。
+    binpkg_excludes: [
+        "media-libs/mesa", // anv NULL deref fix (Mesa 351c5d88, work item 15578) を patches/ で飼っている間
+        "net-misc/gnome-remote-desktop", // 自作 + MR !401 backport パッチ群
+    ],
     accept_keywords: {
         "sys-kernel/gentoo-kernel-bin": null, // Linux 6.12(LTS) does not work with RTL8852CE properly
         "virtual/dist-kernel": null, // for gentoo-kernel-bin
