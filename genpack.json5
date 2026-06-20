@@ -80,6 +80,7 @@
         "media-libs/sdl3-ttf": null,
         "net-misc/freerdp": null,
         "net-misc/gnome-remote-desktop": null,
+        "=dev-libs/wayland-protocols-1.49": null, // ibus fails with `No rule to make target '/input-method-unstable-v1.xml'` as of 1.48
         "media-libs/nvidia-vaapi-driver": null,
         "media-libs/libva-intel-media-driver": null,
         "media-libs/libvpl": null,
