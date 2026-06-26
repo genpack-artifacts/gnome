@@ -102,7 +102,8 @@
     use: {
         "genpack/systemimg": "baremetal",
         "sys-boot/grub": "GRUB_PLATFORMS: pc efi-32",
-        "sys-apps/systemd": "policykit tpm cryptsetup",
+        "sys-apps/systemd": "policykit tpm cryptsetup homed pam openssl",
+        "sys-auth/pambase": "homed",
         "app-i18n/mozc": "ibus renderer",
         "sys-libs/zlib": "minizip",
         "media-fonts/noto": "cjk",
@@ -169,7 +170,7 @@
             ]
         }
     ],
-    services:["gdm","NetworkManager","bluetooth"],
+    services:["gdm","NetworkManager","bluetooth","systemd-homed"],
     arch: {
         "x86_64": {
             packages: [
