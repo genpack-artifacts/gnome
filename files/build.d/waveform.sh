@@ -13,5 +13,5 @@ download $(get-github-download-url phandasm waveform '.*_Ubuntu_x86_64\.deb$') >
 deb2targz /tmp/waveform.deb
 mkdir /tmp/waveform
 tar xvf /tmp/waveform.tar.gz -C /tmp/waveform
-mv /tmp/waveform/usr/lib/x86_64-linux-gnu/obs-plugins/*.so /usr/lib64/obs-plugins/
+mv /tmp/waveform/usr/lib/obs-plugins/*.so /usr/lib64/obs-plugins/
 mv /tmp/waveform/usr/share/obs/obs-plugins/* /usr/share/obs/obs-plugins/
