@@ -8,6 +8,7 @@
         "sys-process/lsof",
         "sys-process/iotop",
         "net-wireless/iw",
+        "sys-fs/mdadm",
         "media-sound/pavucontrol",
         "media-video/libva-utils",
         "media-libs/libva-intel-driver",
@@ -79,12 +80,18 @@
         "dev-python/aiosqlite": null,
         "media-libs/sdl3-ttf": null,
         "net-misc/freerdp": null,
-        "net-misc/gnome-remote-desktop": null,
         "=dev-libs/wayland-protocols-1.49": null, // ibus fails with `No rule to make target '/input-method-unstable-v1.xml'` as of 1.48
         "media-libs/nvidia-vaapi-driver": null,
         "media-libs/libva-intel-media-driver": null,
         "media-libs/libvpl": null,
         "media-libs/gmmlib": null, // for latest libva-intel-media-driver
+        "media-video/vlc": null, // for vlc-4.0.0_pre20260625
+        // gnome
+        "net-misc/gnome-remote-desktop": null,
+        "dev-cpp/gtkmm": null, // for >=gui-libs/gtk-4.19.4
+        "gnome-extra/gnome-contacts": null, // for gnome-contacts-49.0
+        "dev-libs/gjs": null, // for gjs-1.88.0-r1
+        "media-gfx/eog": null, // for eog-50.1
         // obs-studio
         "media-video/obs-studio": null,
         "net-libs/mbedtls": null,
