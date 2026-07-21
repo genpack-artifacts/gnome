@@ -12,7 +12,8 @@
         "media-sound/pavucontrol",
         "media-video/libva-utils",
         "media-libs/libva-intel-driver",
-        "media-libs/libva-intel-media-driver",
+        "media-libs/vpl-gpu-rt",
+        "media-libs/libvpl-tools",
         "sys-firmware/sof-firmware",
         "net-libs/libnsl", // for libnsl.so.3
         "media-video/vlc",
@@ -60,6 +61,7 @@
         "media-video/ffmpeg-compat",
     ],
     buildtime_packages: [
+        "dev-util/wayland-scanner", // for libvpl-tools[wayland]
         "app-arch/deb2targz", // for obs plugins
         "sys-libs/binutils-libs", // objtool used by nvidia-drivers needs this
     ],
@@ -84,6 +86,7 @@
         "media-libs/nvidia-vaapi-driver": null,
         "media-libs/libva-intel-media-driver": null,
         "media-libs/libvpl": null,
+        "media-libs/vpl-gpu-rt": null,
         "media-libs/gmmlib": null, // for latest libva-intel-media-driver
         "media-video/vlc": null, // for vlc-4.0.0_pre20260625
         // gnome
