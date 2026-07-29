@@ -20,7 +20,7 @@ inherit cmake
 
 # Upstream uses tags like "b9354". We use "0_p9354" only as the Portage version
 # (in the ebuild filename) to satisfy Gentoo's rule that versions must start with a digit.
-UPSTREAM_TAG="b9354"
+UPSTREAM_TAG="b10155"
 
 MY_P="llama.cpp-${UPSTREAM_TAG}"
 
@@ -76,12 +76,16 @@ src_prepare() {
     cmake_src_prepare
 
     # Populate tools/ui/dist/ from the GitHub release-attached UI tarball.
-    # This hits Priority 1 in ui-assets.cmake → no npm, no HF download at build time.
-    # The UI tarball is named llama-${tag}-ui.tar.gz and extracts to a directory
-    # containing exactly the 4 needed files (different dir name from the main source).
+    # This hits Priority 1 in scripts/ui-assets.cmake (it only checks for
+    # ${SRC_DIST_DIR}/index.html) → no npm, no HF download at build time.
+    # The UI is a SvelteKit PWA build: the whole tree (index.html + _app/ +
+    # PWA assets + sw.js) must be present, and llama-ui-embed embeds every file
+    # under dist/ recursively (recursive_directory_iterator). So copy the ENTIRE
+    # extracted tarball, not a fixed file list.
+    # The tarball is named llama-${tag}-ui.tar.gz and extracts to llama-${tag}/
+    # (a different dir name from the main source llama.cpp-${tag}, so no collision).
     mkdir -p "${S}/tools/ui/dist" || die
-    cp "${WORKDIR}/llama-${UPSTREAM_TAG}"/{bundle.css,bundle.js,index.html,loading.html} \
-        "${S}/tools/ui/dist/" || die
+    cp -r "${WORKDIR}/llama-${UPSTREAM_TAG}/." "${S}/tools/ui/dist/" || die
 }
 
 src_configure() {
