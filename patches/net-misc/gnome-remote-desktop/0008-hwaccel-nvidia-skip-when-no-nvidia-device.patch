@@ -1,0 +1,64 @@
+From 50030794b955e4a23d08e77b04cbb7a9191cb49d Mon Sep 17 00:00:00 2001
+From: Tomoatsu Shimada <shimada@walbrix.com>
+Date: Sun, 2 Aug 2026 09:54:48 +0900
+Subject: [PATCH] hwaccel-nvidia: Skip CUDA/NVENC when no NVIDIA device is
+ present
+
+The generic (hardware-agnostic) genpack GNOME artifact bundles the NVIDIA
+userspace driver (libcuda) so images work on machines that do have an
+NVIDIA GPU. On machines *without* one, libcuda is still present and
+dlopen-able, so grd_hwaccel_nvidia_new() loads it and calls cuInit().
+
+cuInit() fork()s internally (to run nvidia-modprobe / create the
+/dev/nvidia* nodes when missing). grd calls it from RDP server startup,
+by which point the EGL thread and the Mesa render worker threads
+(radeonsi/anv: cs0, disk$0, sh0, gdrv0, gl0, ...) are already running.
+Forking from that multi-threaded state leaves the child holding locks
+owned by threads that do not exist in the child, so the child deadlocks
+(futex) in its own exit path and the parent blocks forever in wait4().
+The RDP server never finishes starting; in the login-screen handover
+path StartHandover() is thus never called, the client is never
+redirected, and after the 30 s handover timeout the connection is
+dropped -- i.e. remote login is completely broken (black screen then
+disconnect).
+
+Machines that actually have an NVIDIA GPU are unaffected: the kernel
+module is loaded and /dev/nvidiactl exists, so cuInit() does not need to
+fork and CUDA/NVENC (still the only H.264 encode path for NVIDIA) keeps
+working.
+
+Guard the NVIDIA hwaccel bring-up on the presence of /dev/nvidiactl: if
+there is no NVIDIA kernel driver there is no usable NVIDIA GPU, so skip
+CUDA/NVENC and let grd_rdp_server_new() fall back to Vulkan/VA-API.
+---
+ src/grd-hwaccel-nvidia.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/src/grd-hwaccel-nvidia.c b/src/grd-hwaccel-nvidia.c
+index b4640e0..5dfe404 100644
+--- a/src/grd-hwaccel-nvidia.c
++++ b/src/grd-hwaccel-nvidia.c
+@@ -829,6 +829,20 @@ grd_hwaccel_nvidia_new (GrdEglThread *egl_thread)
+   CUresult cu_result;
+   unsigned int i;
+ 
++  /* On hardware without an NVIDIA GPU the bundled libcuda is still loadable,
++   * but cuInit() fork()s internally (to run nvidia-modprobe) and, when called
++   * from grd's multi-threaded state (EGL/Mesa render threads already running),
++   * the forked child deadlocks -- hanging RDP server startup and, in the login
++   * handover path, blocking remote login entirely.  If no NVIDIA kernel driver
++   * is present (no /dev/nvidiactl) there is no usable NVIDIA GPU, so skip
++   * CUDA/NVENC and let the caller fall back to Vulkan/VA-API. */
++  if (!g_file_test ("/dev/nvidiactl", G_FILE_TEST_EXISTS))
++    {
++      g_debug ("[HWAccel.CUDA] No NVIDIA kernel driver present "
++               "(/dev/nvidiactl missing); skipping CUDA/NVENC initialization");
++      return NULL;
++    }
++
+   hwaccel_nvidia = g_object_new (GRD_TYPE_HWACCEL_NVIDIA, NULL);
+   hwaccel_nvidia->egl_thread = egl_thread;
+ 
+-- 
+2.54.0
+
