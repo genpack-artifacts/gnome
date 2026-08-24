@@ -59,6 +59,7 @@
         // ref: srs/genpack.json5
         "media-video/srs",
         "media-video/ffmpeg-compat",
+        "sys-apps/ripgrep", // ref: opencode/genpack.json5
     ],
     buildtime_packages: [
         "dev-util/wayland-scanner", // for libvpl-tools[wayland]
