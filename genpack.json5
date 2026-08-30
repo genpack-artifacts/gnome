@@ -17,7 +17,7 @@
         "sys-firmware/sof-firmware",
         "net-libs/libnsl", // for libnsl.so.3
         "media-video/vlc",
-        "media-video/mpv",
+        "media-video/celluloid",
         "media-plugins/gst-plugins-libav",
         "media-plugins/gst-plugins-x265",
         "media-plugins/gst-plugins-libde265",
