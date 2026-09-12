@@ -31,44 +31,46 @@ The flag leaves the AVC444 dual-stream path and the VAAPI encoder path
 unaffected; only the compute-shader step that feeds the encoder input
 is changed.
 
+Rebased for 50.2: the GRD_DEBUG_VKVA flag (1 << 5) was removed
+upstream, so the new flag shifts from 1 << 7 to 1 << 6.
+
 ---
  src/grd-debug.c              | 1 +
  src/grd-debug.h              | 1 +
  src/grd-rdp-view-creator-avc.c | 3 ++-
  3 files changed, 4 insertions(+), 1 deletion(-)
-
 diff --git a/src/grd-debug.c b/src/grd-debug.c
-index e9478e8..5cb24d9 100644
+index f4937c4..e10c6d7 100644
 --- a/src/grd-debug.c
 +++ b/src/grd-debug.c
-@@ -32,6 +32,7 @@ static const GDebugKey grd_debug_keys[] = {
+@@ -31,6 +31,7 @@ static const GDebugKey grd_debug_keys[] = {
+   { "vk-times", GRD_DEBUG_VK_TIMES },
    { "va-times", GRD_DEBUG_VA_TIMES },
-   { "vkva-renderer", GRD_DEBUG_VKVA },
    { "no-avc444", GRD_DEBUG_NO_AVC444 },
 +  { "no-damage-detection", GRD_DEBUG_NO_DAMAGE_DETECTION },
  };
-
+ 
  static GrdDebugFlags debug_flags;
 diff --git a/src/grd-debug.h b/src/grd-debug.h
-index 2b7a6ac..8b6237c 100644
+index 098df56..edacb42 100644
 --- a/src/grd-debug.h
 +++ b/src/grd-debug.h
-@@ -30,6 +30,7 @@ typedef enum _GrdDebugFlags
+@@ -29,6 +29,7 @@ typedef enum _GrdDebugFlags
+   GRD_DEBUG_VK_TIMES = 1 << 3,
    GRD_DEBUG_VA_TIMES = 1 << 4,
-   GRD_DEBUG_VKVA = 1 << 5,
-   GRD_DEBUG_NO_AVC444 = 1 << 6,
-+  GRD_DEBUG_NO_DAMAGE_DETECTION = 1 << 7,
+   GRD_DEBUG_NO_AVC444 = 1 << 5,
++  GRD_DEBUG_NO_DAMAGE_DETECTION = 1 << 6,
  } GrdDebugFlags;
-
+ 
  GrdDebugFlags grd_get_debug_flags (void);
 diff --git a/src/grd-rdp-view-creator-avc.c b/src/grd-rdp-view-creator-avc.c
-index 870e647..34fe970 100644
+index 89f10c3..3687100 100644
 --- a/src/grd-rdp-view-creator-avc.c
 +++ b/src/grd-rdp-view-creator-avc.c
-@@ -528,7 +528,8 @@ grd_rdp_view_creator_avc_create_view (GrdRdpViewCreator  *view_creator,
+@@ -544,7 +544,8 @@ grd_rdp_view_creator_avc_create_view (GrdRdpViewCreator  *view_creator,
      command_buffers->init_state_buffers;
    ++n_buffer_submit_infos;
-
+ 
 -  if (src_image_old)
 +  if (src_image_old &&
 +      !(grd_get_debug_flags () & GRD_DEBUG_NO_DAMAGE_DETECTION))

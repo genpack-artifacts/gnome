@@ -72,7 +72,7 @@
     // これまで手動でコンテナ内 unmerge/merge していた運用を置き換える。
     binpkg_excludes: [
         "media-libs/mesa", // anv NULL deref fix (Mesa 351c5d88, work item 15578) を patches/ で飼っている間
-        "net-misc/gnome-remote-desktop", // 自作 + MR !401 backport パッチ群
+        "net-misc/gnome-remote-desktop", // 自作パッチ群
     ],
     accept_keywords: {
         "sys-kernel/gentoo-kernel-bin": null, // Linux 6.12(LTS) does not work with RTL8852CE properly
