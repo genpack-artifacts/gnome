@@ -22,6 +22,8 @@
         "media-plugins/gst-plugins-x265",
         "media-plugins/gst-plugins-libde265",
         "media-plugins/gst-plugins-aom", // AV1
+        "media-plugins/gst-plugins-dash",
+        "media-plugins/gst-plugins-hls",
         "media-libs/nvidia-vaapi-driver",
         "gui-libs/gdk-pixbuf-loader-webp",
         "gui-apps/waypipe",

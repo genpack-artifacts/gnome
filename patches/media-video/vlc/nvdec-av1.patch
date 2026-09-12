@@ -1,0 +1,44 @@
+--- a/modules/hw/nvdec/nvdec.c
++++ b/modules/hw/nvdec/nvdec.c
+@@ -75,7 +75,7 @@
+         change_integer_list( ppsi_deinterlace_type, ppsz_deinterlace_type )
+     set_callbacks(OpenDecoder, CloseDecoder)
+     add_submodule()
+-        set_callback_dec_device(DecoderContextOpen, 3)
++        set_callback_dec_device(DecoderContextOpen, 6)
+         add_shortcut("nvdec")
+ vlc_module_end ()
+ 
+@@ -310,6 +310,7 @@
+             i_nb_surface = 3;
+             break;
+         case VLC_CODEC_VP9:
++        case VLC_CODEC_AV1:
+             i_nb_surface = 10;
+             break;
+         default:
+@@ -704,6 +705,7 @@
+         case VLC_CODEC_MP4V: return cudaVideoCodec_MPEG4;
+         case VLC_CODEC_VP8:  return cudaVideoCodec_VP8;
+         case VLC_CODEC_VP9:  return cudaVideoCodec_VP9;
++        case VLC_CODEC_AV1:  return cudaVideoCodec_AV1;
+         default:             vlc_assert_unreachable();
+     }
+ }
+@@ -770,6 +772,7 @@
+         case VLC_CODEC_MP4V:
+         case VLC_CODEC_VP8:
+         case VLC_CODEC_VP9:
++        case VLC_CODEC_AV1:
+             dec_device = decoder_GetDecoderDevice( p_dec );
+             if (dec_device != NULL)
+                 devsys = GetNVDECOpaqueDevice(dec_device);
+@@ -843,6 +846,8 @@
+             if (es_format_HasVpxAlpha(p_dec->fmt_in)) // contains alpha extradata
+                 goto early_exit;
+             break;
++        case VLC_CODEC_AV1:
++            break;
+         default:
+             msg_Dbg(p_this, "Unsupported codec %4.4s", (char*)&p_dec->fmt_in->i_codec);
+             goto early_exit;

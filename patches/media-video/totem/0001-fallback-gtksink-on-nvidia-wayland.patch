@@ -1,0 +1,33 @@
+--- a/src/backend/bacon-video-widget.c
++++ b/src/backend/bacon-video-widget.c
+@@ -75,6 +75,9 @@
+ 
+ /* gtk+/gnome */
+ #include <gtk/gtk.h>
++#ifdef GDK_WINDOWING_WAYLAND
++#include <gdk/gdkwayland.h>
++#endif
+ #include <glib/gi18n-lib.h>
+ #include <gio/gio.h>
+ #include <gdesktop-enums.h>
+@@ -5591,10 +5594,18 @@
+       GST_INFO ("GL Vendor: %s, renderer: %s", vendor, renderer);
+ 
+       if (g_str_has_prefix (renderer, "llvmpipe") ||
+-          g_str_has_prefix (renderer, "softpipe"))
++          g_str_has_prefix (renderer, "softpipe")) {
+         GST_INFO ("Detected software GL rasterizer, falling back to gtksink");
+-      else
++#ifdef GDK_WINDOWING_WAYLAND
++      } else if (g_str_has_prefix (vendor, "NVIDIA") &&
++                 GDK_IS_WAYLAND_DISPLAY (gdk_display_get_default ())) {
++        /* gtkglsink/glsinkbin fails to share GL context with GtkGLArea on
++         * NVIDIA proprietary driver under Wayland; fall back to gtksink. */
++        GST_INFO ("NVIDIA GPU on Wayland detected, falling back to gtksink");
++#endif
++      } else {
+         works = 2;
++      }
+ 
+       gdk_gl_context_clear_current ();
+     }
