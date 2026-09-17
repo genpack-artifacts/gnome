@@ -133,6 +133,7 @@
         "media-libs/gst-plugins-bad": "vaapi",
         "media-video/obs-studio": "browser pipewire python v4l -vlc websocket nvenc", // vlc dep suspended because of migration to 4.0
         "gnome-base/gnome-shell": "pipewire",
+        "media-libs/glycin": "vala", // for gnome-extra/gnome-contacts 
         "gui-apps/waypipe": "ffmpeg lz4 systemtap vaapi zstd CPU_FLAGS_X86: avx2 avx512f sse3",
         "app-emulation/virt-viewer": "-libvirt",
         "x11-base/xorg-server": "xvfb",
