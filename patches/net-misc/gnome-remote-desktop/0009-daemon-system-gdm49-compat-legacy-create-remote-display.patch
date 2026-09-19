@@ -1,0 +1,83 @@
+daemon-system: Use legacy GDM CreateRemoteDisplay signature for GDM 49.
+
+GRD 50 switched org.gnome.DisplayManager.RemoteDisplayFactory.CreateRemoteDisplay
+from (o remote_id) to (a{sv} properties), matching the GDM 50-side change.
+The GDM in this tree is 49.4, which only implements the legacy (o) signature
+and rejects the new one with:
+
+  GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs:
+  Message type "(a{sv})" does not match expected type "(o)"
+
+aborting every new (routing-token-less) RDP connection. Revert the call to
+the legacy signature. The "hostname" property of the new interface is only
+used by GDM 50's login UI; GDM 49.4's CreateRemoteDisplay(remote_id) already
+creates the display with the given remote id, as it always did.
+
+SetRemoteId is kept in the proxy XML (the code still references the
+generated function), but on GDM 49.4 its only call site -- registering a
+display that appeared without a remote id -- is unreachable, since GDM 49.4
+always creates remote displays with a valid id.
+
+Remove once gdm-50 (with the new interface) becomes available.
+diff --git a/src/grd-daemon-system.c b/src/grd-daemon-system.c
+index cc151b2..f749b15 100644
+--- a/src/grd-daemon-system.c
++++ b/src/grd-daemon-system.c
+@@ -731,24 +731,6 @@ on_incoming_redirected_connection (GrdRdpServer      *rdp_server,
+     remote_client->use_system_credentials);
+ }
+ 
+-static GVariant *
+-serialize_remote_display_properties (GrdRemoteClient *remote_client)
+-{
+-  GVariantBuilder builder;
+-
+-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+-  g_variant_builder_add (&builder, "{sv}", "remote-id",
+-                         g_variant_new_object_path (remote_client->id));
+-
+-  if (remote_client->hostname)
+-    {
+-      g_variant_builder_add (&builder, "{sv}", "hostname",
+-                             g_variant_new_string (remote_client->hostname));
+-    }
+-
+-  return g_variant_builder_end (&builder);
+-}
+-
+ static void
+ on_incoming_new_connection (GrdRdpServer    *rdp_server,
+                             GrdSession      *session,
+@@ -757,7 +739,6 @@ on_incoming_new_connection (GrdRdpServer    *rdp_server,
+   GCancellable *cancellable =
+     grd_daemon_get_cancellable (GRD_DAEMON (daemon_system));
+   GrdRemoteClient *remote_client;
+-  GVariant *properties_variant;
+ 
+   g_debug ("[DaemonSystem] Incoming connection without routing token");
+ 
+@@ -770,10 +751,9 @@ on_incoming_new_connection (GrdRdpServer    *rdp_server,
+   g_debug ("[DaemonSystem] Creating remote display with remote id: %s",
+            remote_client->id);
+ 
+-  properties_variant = serialize_remote_display_properties (remote_client);
+   grd_dbus_gdm_remote_display_factory_call_create_remote_display (
+     daemon_system->remote_display_factory_proxy,
+-    properties_variant,
++    remote_client->id,
+     cancellable,
+     on_create_remote_display_finished,
+     remote_client);
+diff --git a/src/org.gnome.DisplayManager.xml b/src/org.gnome.DisplayManager.xml
+index 14e61fd..145fe21 100644
+--- a/src/org.gnome.DisplayManager.xml
++++ b/src/org.gnome.DisplayManager.xml
+@@ -9,7 +9,7 @@
+   </interface>
+   <interface name="org.gnome.DisplayManager.RemoteDisplayFactory">
+     <method name="CreateRemoteDisplay">
+-      <arg name="properties" direction="in" type="a{sv}"/>
++      <arg name="remote_id" direction="in" type="o"/>
+     </method>
+   </interface>
+ </node>
