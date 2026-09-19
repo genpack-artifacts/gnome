@@ -67,6 +67,7 @@
         "dev-util/wayland-scanner", // for libvpl-tools[wayland]
         "app-arch/deb2targz", // for obs plugins
         "sys-libs/binutils-libs", // objtool used by nvidia-drivers needs this
+        "net-libs/nodejs", // ref: opencode/genpack.json5 (opencode-desktop.sh の app.asar パッチ)
     ],
     // patches/ を当てるパッケージは binpkg を引かずに必ずソースから再ビルドさせる。
     // --usepkg-exclude と --buildpkg-exclude の両方に渡るので、共有 binpkg キャッシュ
