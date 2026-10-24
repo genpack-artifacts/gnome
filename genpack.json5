@@ -65,9 +65,17 @@
         "media-video/ffmpeg-compat",
         "sys-apps/ripgrep", // ref: opencode/genpack.json5
     ],
+    // OBS 33.0 でプラグイン読み込みが刷新された (ref: obs-plugins/genpack.json5)。
+    // サードパーティプラグインの実体は /usr/lib64/obs-modules/plugins/<name>.so
+    // (+ data /usr/share/obs/obs-modules/plugins/<name>/)。旧ロケーション
+    // (/usr/lib64/obs-plugins) は 33.0 では Legacy 表示、34.0 で読まれなくなる。
+    // build.d の obs-multi-rtmp.sh / waveform.sh は新ロケーションへ追従済み
+    // (obs-multi-rtmp は併せてクラッシュバグ修正込みのローカルビルド方式へ切替)。
+    // Portage の media-plugins/* はまだ旧ロケーション設置 (未追従)。
     buildtime_packages: [
         "dev-util/wayland-scanner", // for libvpl-tools[wayland]
         "app-arch/deb2targz", // for obs plugins
+        "dev-build/cmake", // ref: obs-plugins/genpack.json5 (obs-multi-rtmp.sh ローカルビルド)
         "sys-libs/binutils-libs", // objtool used by nvidia-drivers needs this
         "net-libs/nodejs", // ref: opencode/genpack.json5 (opencode-desktop.sh の app.asar パッチ)
     ],
@@ -131,7 +139,7 @@
         "media-video/mpv": "-X -xv vaapi nvenc",
         "media-plugins/gst-plugins-meta": "ffmpeg opus v4l vaapi",
         "media-libs/gst-plugins-bad": "vaapi",
-        "media-video/obs-studio": "browser pipewire python v4l -vlc websocket nvenc", // vlc dep suspended because of migration to 4.0
+        "media-video/obs-studio": "browser pipewire python v4l -vlc websocket nvenc mpegts", // vlc dep suspended because of migration to 4.0. mpegts は obs-multi-rtmp の SRT+HEVC (新 mpegts 出力) に必要。依存の net-libs/librist と net-libs/srt は amd64 安定で ffmpeg[srt] でも引く
         "gnome-base/gnome-shell": "pipewire",
         "media-libs/glycin": "vala", // for gnome-extra/gnome-contacts
         "gui-apps/waypipe": "ffmpeg lz4 systemtap vaapi zstd CPU_FLAGS_X86: avx2 avx512f sse3",
@@ -242,7 +250,7 @@
                 "media-libs/mesa": "vulkan VIDEO_CARDS: -intel -nouveau -radeon -radeonsi lavapipe virgl zink",
                 "media-video/ffmpeg": "v4l x264 x265 opus srt CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
                 "media-video/ffmpeg-compat": "v4l x265 opus srt CPU_FLAGS_X86: avx avx2 fma3 fma4 sse3 sse4_1 sse4_2 ssse3",
-                "media-video/obs-studio": "browser pipewire python v4l vlc websocket",
+                "media-video/obs-studio": "browser pipewire python v4l vlc websocket mpegts",
             },
         },
     }
