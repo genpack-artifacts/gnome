@@ -57,7 +57,6 @@
         "sys-process/nvtop",
         "net-p2p/syncthing",
         "net-misc/magic-wormhole-rust",
-        "sci-ml/llama-cpp", // ref: llama-cpp/genpack.json5 (overlay/sci-ml/llama-cpp の ebuild と対)
         // srs: 公式 media-video/srs (旧 build.d/srs.sh を置換)。バイナリは /usr/bin/srs-media。
         // net-libs/srt は media-video/ffmpeg[srt] が引くため明示不要。libsrtp は rtc=off で不要。
         // ref: srs/genpack.json5
@@ -86,6 +85,7 @@
     binpkg_excludes: [
         "media-libs/mesa", // anv NULL deref fix (Mesa 351c5d88, work item 15578) を patches/ で飼っている間
         "net-misc/gnome-remote-desktop", // 自作パッチ群
+        "llvm-core/llvm",
     ],
     accept_keywords: {
         "sys-kernel/gentoo-kernel-bin": null, // Linux 6.12(LTS) does not work with RTL8852CE properly
@@ -104,6 +104,7 @@
         "media-libs/gmmlib": null, // for latest libva-intel-media-driver
         "media-video/vlc": null, // for vlc-4.0.0_pre20260625
         "net-misc/magic-wormhole-rust": null,
+        "media-video/srs": null, // ~amd64
         // gnome
         ">=net-misc/gnome-remote-desktop-50.2": null,
         // obs-studio
@@ -111,14 +112,46 @@
         "net-libs/mbedtls": null,
         "dev-libs/qr-code-generator": null,
         // ROCm
-        "dev-libs/rocm-opencl-runtime": null,
-        "dev-libs/rocr-runtime": null,
-        "dev-libs/rocm-comgr": null,
-        "dev-libs/rocm-device-libs": null,
-        "dev-build/rocm-cmake": null,
-        "dev-util/hipcc": null,
-        "dev-libs/roct-thunk-interface": null,
-        "media-video/srs": null, // ~amd64
+        ">=sci-ml/ggml-0.28.0-r2": null,
+        ">=sci-libs/miopen-10.1.0": null,
+        ">=dev-cpp/functional-plus-0.2.22": null,
+        ">=dev-util/hip-10.1.0": null,
+        ">=sci-libs/rocRAND-10.1.0": null,
+        ">=dev-libs/rocm-comgr-10.1.0": null,
+        ">=sci-libs/hipBLASLt-10.1.0": null,
+        ">=sci-libs/rocBLAS-10.1.0": null,
+        ">=sci-libs/hipBLAS-10.1.0": null,
+        ">=sci-libs/rocSOLVER-10.1.0": null,
+        ">=dev-util/roctracer-10.1.0": null,
+        ">=dev-build/rocm-cmake-10.1.0": null,
+        ">=dev-util/Tensile-10.1.0": null,
+        ">=sci-libs/hipBLAS-common-10.1.0": null,
+        ">=dev-util/hipcc-10.1.0": null,
+        ">=dev-libs/rocm-device-libs-10.1.0": null,
+        ">=dev-util/rocminfo-10.1.0": null,
+        ">=dev-libs/rocr-runtime-10.1.0": null,
+        ">=dev-libs/rocm-core-10.1.0": null,
+        ">=dev-libs/roct-thunk-interface-10.1.0": null,
+        ">=dev-util/amdsmi-10.1.0": null,
+        ">=dev-libs/rccl-10.1.0": null,
+        ">=dev-util/hipify-clang-10.1.0": null,// for rccl
+        ">=dev-cpp/frugally-deep-0.15.30": null,
+        ">=llvm-core/clang-23.1.2": null,
+        ">=llvm-core/lld-23.1.2": null,
+        ">=llvm-core/llvm-23.1.3": null,
+        ">=llvm-core/clang-common-23.1.3": null,
+        ">=llvm-runtimes/clang-runtime-23-r2": null,
+        ">=llvm-core/clang-toolchain-symlinks-23": null,
+        ">=llvm-runtimes/compiler-rt-23.1.2": null,
+        ">=llvm-runtimes/compiler-rt-sanitizers-23.1.2": null,
+        ">=llvm-runtimes/openmp-23.1.2": null,
+        ">=llvm-core/clang-linker-config-23": null,
+        ">=llvm-runtimes/clang-rtlib-config-23": null,
+        ">=llvm-runtimes/clang-unwindlib-config-23": null,
+        ">=llvm-runtimes/clang-stdlib-config-23": null,
+        ">=llvm-core/llvm-toolchain-symlinks-23": null,
+        ">=llvm-core/llvmgold-23": null,
+        ">=llvm-core/lld-toolchain-symlinks-23": null,
     },
     use: {
         "genpack/systemimg": "baremetal",
@@ -152,20 +185,20 @@
         "dev-libs/libdbusmenu": "gtk3",
         "net-analyzer/zabbix": "-postgres",
         "media-libs/opencv": "python opencl CPU_FLAGS_X86: avx avx2 f16c fma3 popcnt sse3 sse4_1 sse4_2 ssse3",
-	// Keep numpy's baseline at SSE4.2, the ISA floor of the minimum target
-	// machine (Celeron N4020 / Gemini Lake: no AVX2, no AVX-512). A higher
-	// baseline makes `import numpy` fail with a RuntimeError on unsupported
-	// CPUs, breaking every numpy consumer at runtime and any build whose tooling
-	// probes for numpy (e.g. scikit-build-core). cpudetection still dispatches
-	// to AVX2/AVX-512 loops at runtime on faster CPUs, so this costs nothing
-	// there.
-	"dev-python/numpy": "CPU_FLAGS_X86: sse4_2",
+    	// Keep numpy's baseline at SSE4.2, the ISA floor of the minimum target
+    	// machine (Celeron N4020 / Gemini Lake: no AVX2, no AVX-512). A higher
+    	// baseline makes `import numpy` fail with a RuntimeError on unsupported
+    	// CPUs, breaking every numpy consumer at runtime and any build whose tooling
+    	// probes for numpy (e.g. scikit-build-core). cpudetection still dispatches
+    	// to AVX2/AVX-512 loops at runtime on faster CPUs, so this costs nothing
+    	// there.
+    	"dev-python/numpy": "CPU_FLAGS_X86: sse4_2",
         "www-servers/apache": "APACHE2_MODULES: proxy proxy_http",
         "dev-libs/weston": "-X -desktop headless kiosk",
         "dev-python/pyqt6": "multimedia positioning websockets webchannel",
         "net-misc/remmina": "rdp vnc spice wayland",
         "media-libs/libcanberra": "alsa", // for mutter
-	"net-libs/ngtcp2": "gnutls", // for samba
+    	"net-libs/ngtcp2": "gnutls", // for samba
         // gimp
         "media-libs/gegl": "cairo ffmpeg sdl2 v4l webp",
         "app-text/poppler": "cairo cjk",
@@ -174,7 +207,13 @@
         "dev-libs/libxml2": "icu",
         // gnome
         "media-libs/libmediaart": "gtk -qt6",
-        "sys-process/nvtop": "VIDEO_CARDS: nvidia"
+        "sys-process/nvtop": "VIDEO_CARDS: nvidia",
+        // ROCm
+        "sci-ml/ggml": "rocm vulkan",
+        "sci-libs/hipBLASLt": "benchmark roctracer",
+        "sci-libs/rocBLAS": "benchmark hipblaslt roctracer",
+        "sci-libs/miopen": "composable-kernel roctracer",
+        "sci-libs/hipBLAS": "rocsolver",
     },
     license: {
         "sys-kernel/linux-firmware": "linux-fw-redistributable",
@@ -206,7 +245,7 @@
                 "app-containers/snapd",
                 "app-misc/jdupes",
                 "app-misc/radeontop",
-                "dev-libs/rocm-opencl-runtime",
+                "sci-ml/ggml", // brings deps for llama.cpp
                 "dev-util/clinfo",
                 "dev-python/pyqt6-webengine",
                 "dev-util/vulkan-tools",
