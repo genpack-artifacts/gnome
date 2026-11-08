@@ -74,6 +74,12 @@ tar xJf data.tar.xz -C /
 # the anchor is the darwin early-return next to Menu.buildFromTemplate, not a
 # fixed function name. The asar is rewritten in place (header offsets + SHA256
 # integrity recomputed).
+#
+# Upstream keeps reshaping that guard (#61946 moved it out of createMenu() into
+# the state machine's build()), so the shape check only pins what the
+# replacement depends on: the marker is the tail of an if() condition, either
+# the whole condition (2.2.6 `if(process.platform!==`darwin`)return`) or the
+# tail of a comma expression (2.2.5 `if(zm=e,process.platform!==`darwin`)`).
 # node is supplied by buildtime_packages (net-libs/nodejs).
 if [ ! -f /opt/OpenCode/resources/app.asar ]; then
     echo "resources/app.asar missing in the release; release layout changed?" >&2
@@ -160,7 +166,8 @@ const t = candidates[0].f;
 const src = candidates[0].text;
 const at = candidates[0].at;
 const menu = candidates[0].menu;
-if (!/if\([A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*,$/.test(src.slice(Math.max(0, at - 80), at)))
+const head = src.slice(Math.max(0, at - 80), at);
+if (!/if\((?:[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*,)?$/.test(head))
   fail("createMenu() anchor shape changed; release layout changed?");
 const replacement =
   "process.platform===`linux`?(" + menu + ".setApplicationMenu(null),!0):process.platform!==`darwin`)return;";
